@@ -18,7 +18,7 @@ SmartScan-CLI is a command-line tool for Linux systems with systemd support. It 
 ### Installation Steps  
 1. Clone the repository:  
    ```sh
-   git clone <repo_url>
+   git clone https://github.com/dev-diaries41/smartscan-cli.git
    cd smartscan-cli
    ```  
 2. Set executable permissions for the install script:  
