@@ -65,7 +65,7 @@ def main():
 
     args = parser.parse_args()
     tokenizer = open_clip.get_tokenizer('ViT-B-32')
-    # Uncomment this line and replace 'TEXT_ENCODER_PATH' with 'model' if you do not wish to use the quantized onnx model
+    # Uncomment this line if you do not wish to use the quantized onnx model then add model to all the 4 function below using model=model
     # model, _, _ = open_clip.create_model_and_transforms(MODEL_NAME, pretrained=PRETRAINED)
 
     if args.command == "compare":
