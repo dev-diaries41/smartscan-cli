@@ -1,0 +1,9 @@
+[Unit]
+Description=Run SmartScan Script
+
+[Service]
+EnvironmentFile=%h/.smartscan/smartscan.conf
+ExecStart=/bin/bash -c '/usr/local/bin/smartscan scan "$TARGET_FILE" "$DESTINATION_FILE" ${THRESHOLD:+-t "$THRESHOLD"}'
+
+[Install]
+WantedBy=default.target

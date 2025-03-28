@@ -1,0 +1,10 @@
+[Unit]
+Description=Run SmartScan Daily
+Wants=smartscan.service
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target
