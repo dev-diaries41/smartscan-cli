@@ -4,10 +4,6 @@ from onnx_utils.textencoder import TextEncoder
 from onnxruntime.quantization import quantize_dynamic, QuantType
 import os
 
-MODEL_NAME = 'ViT-B-32'
-PRETRAINED = 'laion2b_s34b_b79k'
-TEXT_ENCODER_PATH = 'clip_text_encoder_quant.onnx'
-IMAGE_ENCODER_PATH = 'clip_image_encoder_quant.onnx'
 
 def image_encoder_to_onnx(model_name: str, pretrained: str, output_path: str):
     """
@@ -83,6 +79,6 @@ def text_encoder_to_onnx(model_name: str, pretrained: str, output_path: str):
 
     os.remove(tmp_model_path) # only save quantized model
 
-if __name__ == "__main__":
-    # image_encoder_to_onnx(MODEL_NAME, PRETRAINED, IMAGE_ENCODER_PATH)
-    text_encoder_to_onnx(MODEL_NAME, PRETRAINED, TEXT_ENCODER_PATH)
+# if __name__ == "__main__":
+#     # image_encoder_to_onnx(MODEL_NAME, PRETRAINED, IMAGE_ENCODER_PATH)
+#     text_encoder_to_onnx(MODEL_NAME, PRETRAINED, TEXT_ENCODER_PATH)
