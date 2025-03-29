@@ -5,7 +5,7 @@ SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 
 echo "Copying repository from '$SCRIPT_DIR' to '$BASE_DIR'..."
 # cp -r "$SCRIPT_DIR" "$BASE_DIR" || { echo "Failed to copy repository."; exit 1; }
-rsync -av --exclude='README.md' --exclude='venv/' --exclude='__pycache__/' "$SCRIPT_DIR/" "$BASE_DIR/" || { echo "Failed to copy repository."; exit 1; }
+rsync -av --exclude='README.md' --exclude='venv/' --exclude='.git/' --exclude='__pycache__/' "$SCRIPT_DIR/" "$BASE_DIR/" || { echo "Failed to copy repository."; exit 1; }
 
 cd "$BASE_DIR" || exit 1
 
