@@ -6,13 +6,8 @@ import argparse
 from compare import compare_files, compare_file_to_dir, compare_file_to_dirs, scan
 from utils import load_dir_list, move_file
 from onnx_utils.convert import text_encoder_to_onnx, image_encoder_to_onnx
+from constants import MODEL_NAME, PRETRAINED, TEXT_ENCODER_PATH, IMAGE_ENCODER_PATH
 
-
-MODEL_NAME = 'ViT-B-32'
-PRETRAINED = 'laion2b_s34b_b79k'
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-TEXT_ENCODER_PATH = os.path.join(BASE_DIR, 'clip_text_encoder_quant.onnx')
-IMAGE_ENCODER_PATH = os.path.join(BASE_DIR, 'clip_image_encoder_quant.onnx')
 
 
 def on_threshold_reached(file_path: str, target_dir: str):

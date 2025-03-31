@@ -1,5 +1,5 @@
 import os
-from utils import save_embedding, load_embedding, preprocess
+from utils import save_embedding, load_embedding
 from typing import List, Callable, Any
 from embeddings import (get_embedding, get_embedding_onnx, calculate_cosine_similarity, aggregate_embeddings_from_dir)
 

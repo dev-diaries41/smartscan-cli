@@ -3,7 +3,7 @@ from PIL import Image
 import os
 from utils import read_text_file, preprocess
 import onnxruntime as ort
-from onnx_utils.convert import IMAGE_ENCODER_PATH, TEXT_ENCODER_PATH
+from constants import TEXT_ENCODER_PATH, IMAGE_ENCODER_PATH
 
 
 def get_embedding(model, tokenizer, file_path):
