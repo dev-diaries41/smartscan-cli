@@ -1,5 +1,5 @@
 import os
-from utils import save_embedding, load_embedding
+from utils import save_embedding, load_embedding, has_one_week_passed
 from typing import List, Callable, Any
 from embeddings import (get_embedding, get_embedding_onnx, calculate_cosine_similarity, aggregate_embeddings_from_dir)
 
@@ -52,7 +52,7 @@ def compare_file_to_dirs(filepath: str, dirpaths: List[str], tokenizer, model = 
     for dirpath in dirpaths:
         prototype_embedding_filepath = os.path.join(dirpath, "prototype_embedding.pkl")
         try:
-            if os.path.exists(prototype_embedding_filepath):
+            if os.path.exists(prototype_embedding_filepath) and not has_one_week_passed(prototype_embedding_filepath):
                 prototype_embedding = load_embedding(prototype_embedding_filepath)
             else:
                 prototype_embedding = aggregate_embeddings_from_dir(tokenizer, dirpath, model)

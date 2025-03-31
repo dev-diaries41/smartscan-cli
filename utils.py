@@ -2,6 +2,9 @@ import os
 import torch
 import pickle
 import shutil
+from PIL import Image
+import numpy as np
+import datetime
 
 def read_text_file(filepath: str):
     if not os.path.exists(filepath):
@@ -52,8 +55,13 @@ def load_embedding(filepath: str) -> torch.Tensor:
     with open(filepath, 'rb') as f:
         return pickle.load(f)
 
-from PIL import Image
-import numpy as np
+
+def has_one_week_passed(file_path: str) -> bool:
+    last_modified_timestamp = os.path.getmtime(file_path)    
+    last_modified_date = datetime.datetime.fromtimestamp(last_modified_timestamp)    
+    current_date = datetime.datetime.now()    
+    days_since_modified = (current_date - last_modified_date).days
+    return days_since_modified % 7 == 0
 
 
 def preprocess(image: Image.Image) -> torch.Tensor:
