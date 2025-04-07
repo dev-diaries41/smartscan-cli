@@ -4,6 +4,7 @@ import os
 from utils import read_text_file, preprocess
 import onnxruntime as ort
 from constants import TEXT_ENCODER_PATH, IMAGE_ENCODER_PATH
+import random
 
 
 def get_embedding(model, tokenizer, file_path):
@@ -65,13 +66,16 @@ def get_embedding_onnx(tokenizer, file_path: str):
         raise RuntimeError(f"Error processing embedding: {e}")
 
 
-def aggregate_embeddings_from_dir(tokenizer, dir_path, model = None):
-    """Compute and average embeddings for all valid image and text files in a directory."""
+def aggregate_embeddings_from_dir(tokenizer, dir_path, model=None, limit=30):
+    """Compute and average embeddings for a limited number of shuffled valid image and text files in a directory."""
     
     embeddings = []
 
     try:
-        for filename in os.listdir(dir_path):
+        filenames = os.listdir(dir_path)
+        random.shuffle(filenames)
+        
+        for filename in filenames[:limit]:
             file_path = os.path.join(dir_path, filename)
             if model is not None:
                 emb = get_embedding(model, tokenizer, file_path)
@@ -89,6 +93,7 @@ def aggregate_embeddings_from_dir(tokenizer, dir_path, model = None):
     prototype = torch.mean(embeddings_tensor, dim=0)
     prototype /= prototype.norm()
     return prototype
+
 
 def calculate_cosine_similarity(embedding1, embedding2):
     try:
