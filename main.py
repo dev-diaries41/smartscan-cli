@@ -24,7 +24,7 @@ def main():
         
             
     parser = argparse.ArgumentParser(
-        description="CLI tool for comparing text embeddings and scanning directories."
+        description="CLI tool for comparing text or image embeddings and scanning directories."
     )
     subparsers = parser.add_subparsers(dest='command', required=True)
 
@@ -35,19 +35,19 @@ def main():
         "-f", "--file",
         nargs=2,
         metavar=("FILEPATH1", "FILEPATH2"),
-        help="Compare two text files."
+        help="Compare two text or image files."
     )
     compare_group.add_argument(
         "-d", "--dir",
         nargs=2,
         metavar=("FILEPATH", "DIRPATH"),
-        help="Compare a text file against a directory."
+        help="Compare a text or image file against a directory."
     )
     compare_group.add_argument(
         "-l", "--dirs",
         nargs=2,
         metavar=("FILEPATH", "DIRLISTFILE"),
-        help="Compare a text file against multiple directories listed in a file."
+        help="Compare a text or image file against multiple directories listed in a file."
     )
 
     # Scan subcommand
