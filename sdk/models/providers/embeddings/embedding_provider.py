@@ -12,17 +12,17 @@ class EmbeddingProvider(ABC):
     def embed(self, data: Any) -> np.ndarray:
         pass
     @abstractmethod
-    def embedBatch(self, data: list[Any]) -> np.ndarray:
+    def embed_batch(self, data: list[Any]) -> np.ndarray:
         pass
 
     @abstractmethod
-    def initialize(self):
+    def init(self):
         pass
 
     @abstractmethod
-    def isInitialized(self) -> bool: 
+    def is_initialized(self) -> bool: 
         pass
     
     @abstractmethod
-    def closeSession(self):
+    def close_session(self):
         pass
