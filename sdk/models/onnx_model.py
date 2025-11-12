@@ -1,4 +1,4 @@
-from base_model import BaseModel
+from sdk.models.base_model import BaseModel
 import onnxruntime as ort
 import numpy as np
 
