@@ -3,6 +3,7 @@ import torch
 import pickle
 import shutil
 import datetime
+import numpy as np
 
 def read_text_file(filepath: str):
     if not os.path.exists(filepath):
@@ -60,3 +61,15 @@ def has_one_week_passed(file_path: str) -> bool:
     current_date = datetime.datetime.now()    
     days_since_modified = (current_date - last_modified_date).days
     return days_since_modified % 7 == 0
+
+
+def generate_prototype_embedding(embeddings):    
+    embeddings_tensor = np.stack(embeddings, dim=0)
+    prototype = np.mean(embeddings_tensor, dim=0)
+    prototype /= np.linalg.norm(prototype)
+    return prototype
+
+
+def get_files_from_dir(dir_path, limit = 30):
+    assert os.path.isdir(dir_path), "Invalid directory"
+    return [ os.path.join(dir_path, filename) for filename in os.listdir(dir_path)[:limit]]    
