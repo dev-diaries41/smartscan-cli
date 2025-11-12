@@ -5,9 +5,8 @@ import numpy as np
 class EmbeddingProvider(ABC):
     @property
     @abstractmethod
-    def embeddingDim(self) -> int:
-        return self.embeddingDim
-
+    def embedding_dim(self) -> int:
+        pass
     @abstractmethod
     def embed(self, data: Any) -> np.ndarray:
         pass
