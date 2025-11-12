@@ -17,5 +17,8 @@ class OnnxModel(BaseModel):
     def close(self):
         self.ort_session = None
 
+    def get_inputs(self):
+        return self.ort_session.get_inputs()
+
     def run(self, inputs: dict) -> list[np.ndarray]:
         return self.ort_session.run(None, inputs)
