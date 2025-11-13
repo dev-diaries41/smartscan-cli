@@ -22,6 +22,7 @@ class ClipImageEmbedder(EmbeddingProvider):
         image = io.BytesIO(data) if isinstance(data, bytes) else data
         input_name = self._model.get_inputs()[0].name
         image_input = self._preprocess(Image.open(image))
+        image_input = np.expand_dims(image_input, axis=0)
         outputs = self._model.run({input_name: image_input})
         embedding = outputs[0][0]
         embedding = embedding / np.linalg.norm(embedding)
