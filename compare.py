@@ -1,22 +1,36 @@
 import os
 from utils import save_embedding, load_embedding, has_one_week_passed
 from typing import List, Callable, Any
-from embeddings import (get_embedding, get_embedding_onnx, calculate_cosine_similarity, aggregate_embeddings_from_dir)
-
-def compare_files(filepath1: str, filepath2: str, tokenizer, model = None):
-    """Compute the cosine similarity between two text files' embeddings."""
-
-    if model is None:
-        file_embedding1 = get_embedding_onnx(tokenizer, filepath1)
-        file_embedding2 = get_embedding_onnx(tokenizer, filepath2)
-    else:
-        file_embedding1 = get_embedding(model, tokenizer, filepath1)
-        file_embedding2 = get_embedding(model, tokenizer, filepath2)
-
-    return calculate_cosine_similarity(file_embedding1, file_embedding2)
+from sdk.models.providers.embeddings.embedding_provider import EmbeddingProvider
+import numpy as np
+from utils import generate_prototype_embedding
 
 
-def compare_file_to_dir(filepath: str, dirpath: str, tokenizer, model = None):
+
+def compare_files(embedder: EmbeddingProvider, filepath1: str, filepath2: str):
+    """Compute the cosine similarity between two files' embeddings."""
+
+    embeddings = embedder.embed_batch([filepath1, filepath2])
+    return np.dot(embeddings[0], embeddings[1])
+
+
+def generate_prototype_for_dir(dirpath, embedder: EmbeddingProvider, limit = 30):
+    files = [os.path.join(dirpath, f) for f in os.listdir()[:limit]]
+    pos = 0
+    chunk_size = 4
+    embeddings = []
+    while(pos < len(files)):
+        file_batch = files[pos : (pos + chunk_size)]
+        batch_embeddings = embedder.embed_batch(file_batch)
+        embeddings.append(batch_embeddings)
+        pos += chunk_size
+    
+    embeddings = np.array(batch_embeddings)
+    prototype_embedding = generate_prototype_embedding(embeddings)
+    return prototype_embedding
+
+
+def compare_file_to_dir(filepath: str, dirpath: str, embedder: EmbeddingProvider, limit = 30):
     """
     Compute the cosine similarity between a text file's embedding and a directory's prototype embedding.
     """
@@ -25,18 +39,14 @@ def compare_file_to_dir(filepath: str, dirpath: str, tokenizer, model = None):
     if os.path.exists(prototype_embedding_filepath):
         prototype_embedding = load_embedding(prototype_embedding_filepath)
     else:
-        prototype_embedding = aggregate_embeddings_from_dir(tokenizer, dirpath, model)
+        prototype_embedding = generate_prototype_for_dir(dirpath, embedder, limit)
         save_embedding(prototype_embedding_filepath, prototype_embedding)
 
-    if model is None:
-        file_embedding = get_embedding_onnx(tokenizer, filepath)
-    else:
-        file_embedding = get_embedding(model, tokenizer, filepath )
-
-    return calculate_cosine_similarity(file_embedding, prototype_embedding)
+    file_embedding = embedder.embed(filepath)
+    return np.dot(file_embedding, prototype_embedding)
 
 
-def compare_file_to_dirs(filepath: str, dirpaths: List[str], tokenizer, model = None):
+def compare_file_to_dirs(filepath: str, dirpaths: List[str],  embedder: EmbeddingProvider, limit = 30):
     """
     Compare a text file's embedding to prototype embeddings from multiple directories, returning
     the best matching directory and its similarity score.
@@ -44,25 +54,22 @@ def compare_file_to_dirs(filepath: str, dirpaths: List[str], tokenizer, model = 
     best_similarity = -float("inf")
     best_dirpath = None
   
-    if model is None:
-        file_embedding = get_embedding_onnx(tokenizer, filepath)
-    else:
-        file_embedding = get_embedding(model, tokenizer, filepath )
-  
+    file_embedding = embedder.embed(filepath)
+
     for dirpath in dirpaths:
         prototype_embedding_filepath = os.path.join(dirpath, "prototype_embedding.pkl")
         try:
             if os.path.exists(prototype_embedding_filepath) and not has_one_week_passed(prototype_embedding_filepath):
                 prototype_embedding = load_embedding(prototype_embedding_filepath)
             else:
-                prototype_embedding = aggregate_embeddings_from_dir(tokenizer, dirpath, model)
+                prototype_embedding = generate_prototype_for_dir(dirpath, embedder, limit)
                 save_embedding(prototype_embedding_filepath, prototype_embedding)
         except Exception as e:
             print(f"[WARNING] Skipping directory {dirpath} due to error: {e}")
             continue
 
         try:
-            similarity = calculate_cosine_similarity(file_embedding, prototype_embedding)
+            similarity = np.dot(file_embedding, prototype_embedding)
         except Exception as e:
             print(f"[WARNING] Error comparing embeddings for directory {dirpath}: {e}")
             continue
