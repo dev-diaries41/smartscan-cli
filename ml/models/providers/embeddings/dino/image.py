@@ -59,7 +59,7 @@ class DinoSmallV2ImageEmbedder(EmbeddingProvider):
         
         image = image.convert(MODE)
 
-        # 2) Resize shorter side to output_size / crop_pct (224/0.875 = 256)
+        # Resize shorter side to output_size / crop_pct (224/0.875 = 256)
         crop_pct = SIZE / (SIZE / 0.875) 
         scale_size = int(SIZE / crop_pct + 0.5) 
 
@@ -72,20 +72,16 @@ class DinoSmallV2ImageEmbedder(EmbeddingProvider):
             new_h = int(h * (scale_size / w))
         image = image.resize((new_w, new_h), resample=RESAMPLE)
 
-        # 3) Center-crop
         left = (new_w - SIZE) // 2
         top  = (new_h - SIZE) // 2
         image = image.crop((left, top, left + SIZE, top + SIZE))
 
-        # 4) To float32 NumPy array, scale to [0,1]
         arr = np.asarray(image, dtype=np.float32) / 255.0
 
-        # 5) Normalize per channel
         mean = np.array(MEAN, dtype=np.float32)
         std  = np.array(STD,  dtype=np.float32)
         arr = (arr - mean) / std
 
-        # 6) HWC → CHW & add batch dim
-        arr = arr.transpose(2, 0, 1)[None, ...]
+        arr = arr.transpose(2, 0, 1)
+        arr = np.expand_dims(arr, axis=0)
         return arr.astype(dtype=np.float32)
-

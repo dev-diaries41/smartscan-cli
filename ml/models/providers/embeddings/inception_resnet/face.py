@@ -57,28 +57,24 @@ class InceptionResnetFaceEmbedder(EmbeddingProvider):
         STD = (0.229, 0.224, 0.225)
         INTERPOLATION = Image.BICUBIC
 
-        # 1. Convert to RGB if not already
         image = image.convert(MODE)
         
-        # 2. Resize based on the shortest edge
+        # Resize based on the shortest edge
         w, h = image.size
-        # Compute scaling factor so that the shortest edge becomes SIZE
         scale = SIZE / min(w, h)
         new_w, new_h = round(w * scale), round(h * scale)
         image = image.resize((new_w, new_h), INTERPOLATION)
         
-        # 3. Center crop to SIZE x SIZE
         left = (new_w - SIZE) // 2
         top = (new_h - SIZE) // 2
         image = image.crop((left, top, left + SIZE, top + SIZE))
         
-        # 4. Convert to NumPy array and scale pixel values to [0, 1]
         img_array = np.array(image).astype(np.float32) / 255.0
         
-        # 5. Transpose to channel-first format (B, C, H, W)
-        img_array = img_array.transpose(2, 0, 1)[None, ...]
-        
-        # 6. Normalize using the specified mean and std
+        img_array = img_array.transpose(2, 0, 1)
+        img_array = np.expand_dims(img_array, axis=0)
+
+        # channel-first normalization tensors so normalization must happen after transposing
         mean = np.array(MEAN).reshape(3, 1, 1)
         std = np.array(STD).reshape(3, 1, 1)
         img_array = (img_array - mean) / std
