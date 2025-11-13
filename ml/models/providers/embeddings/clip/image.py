@@ -22,7 +22,6 @@ class ClipImageEmbedder(EmbeddingProvider):
         image = io.BytesIO(data) if isinstance(data, bytes) else data
         input_name = self._model.get_inputs()[0].name
         image_input = self._preprocess(Image.open(image))
-        image_input = np.expand_dims(image_input, axis=0)
         outputs = self._model.run({input_name: image_input})
         embedding = outputs[0][0]
         embedding = embedding / np.linalg.norm(embedding)
@@ -36,7 +35,7 @@ class ClipImageEmbedder(EmbeddingProvider):
         
         input_name = self._model.get_inputs()[0].name
         images = [self._preprocess(Image.open(io.BytesIO(item) if isinstance(item, bytes) else item)) for item in data]
-        image_inputs = np.stack(images, axis=0)
+        image_inputs = np.concatenate(images, axis=0)
         outputs = self._model.run({input_name: image_inputs})
         embeddings = outputs[0]
         embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
@@ -59,30 +58,25 @@ class ClipImageEmbedder(EmbeddingProvider):
         STD = (0.26862954, 0.26130258, 0.27577711)
         INTERPOLATION = Image.BICUBIC
 
-        # 1. Convert to RGB if not already
         image = image.convert(MODE)
         
-        # 2. Resize based on the shortest edge
+        # Resize based on the shortest edge
         w, h = image.size
-        # Compute scaling factor so that the shortest edge becomes SIZE
         scale = SIZE / min(w, h)
         new_w, new_h = round(w * scale), round(h * scale)
         image = image.resize((new_w, new_h), INTERPOLATION)
         
-        # 3. Center crop to SIZE x SIZE
         left = (new_w - SIZE) // 2
         top = (new_h - SIZE) // 2
         image = image.crop((left, top, left + SIZE, top + SIZE))
         
-        # 4. Convert to NumPy array and scale pixel values to [0, 1]
         img_array = np.array(image).astype(np.float32) / 255.0
         
-        # 5. Transpose to channel-first format (C, H, W)
         img_array = img_array.transpose(2, 0, 1)
+        img_array = np.expand_dims(img_array, axis=0)
         
-        # 6. Normalize using the specified mean and std
+        # channel-first normalization tensors so normalization must happen after transposing
         mean = np.array(MEAN).reshape(3, 1, 1)
         std = np.array(STD).reshape(3, 1, 1)
         img_array = (img_array - mean) / std
         return img_array.astype(dtype=np.float32)
-
