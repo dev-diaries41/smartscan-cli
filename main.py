@@ -28,8 +28,10 @@ def main():
         text_encoder=ClipTextEmbedder(TEXT_ENCODER_PATH),
         similarity_threshold=0.4
     )
-        
-            
+
+    file_organiser.image_encoder.init()
+    file_organiser.text_encoder.init()
+
     parser = argparse.ArgumentParser(
         description="CLI tool for comparing text or image embeddings and scanning directories."
     )
