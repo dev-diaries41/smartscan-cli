@@ -6,14 +6,10 @@ import datetime
 import numpy as np
 
 def read_text_file(filepath: str):
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(f"File not found: {filepath}")
-    
-    try:
-        with open(filepath, 'r', encoding='utf-8') as file:
-            return file.read()
-    except Exception as e:
-        return f"Error reading file: {e}"
+   assert os.path.isfile(filepath), "Invalid file"
+   with open(filepath, 'r', encoding='utf-8') as file:
+            return file.read()       
+  
 
 def load_dir_list(dirlist_file):
     """Read the list of directory paths from the provided text file."""
