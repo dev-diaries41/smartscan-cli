@@ -21,8 +21,8 @@ class FileOrganiser():
         self.image_encoder = image_encoder
         self.text_encoder = text_encoder
         self.similarity_threshold = similarity_threshold
-        self.valid_img_exts = ['.png', '.jpg', '.jpeg', '.bmp', '.gif']
-        self.valid_txt_exts = ['.txt', '.md', '.rst', '.html', '.json']
+        self.valid_img_exts = ('.png', '.jpg', '.jpeg', '.bmp', '.gif')
+        self.valid_txt_exts = ('.txt', '.md', '.rst', '.html', '.json')
         self.max_files_for_prototypes = max_files_for_prototypes
 
     def compare_files(self, filepath1: str, filepath2: str):
