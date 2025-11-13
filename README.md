@@ -100,15 +100,6 @@ smartscan scan target_dirs.txt destination_dirs.txt -t 0.8
 - **DESTINATION_FILE**: A file listing the directories where files should be moved based on similarity.
 - **-t, --threshold**: (Optional) Set a custom similarity threshold for file organization. Defaults to 0.7 if not provided.
 
-
-### Onnx quantization
-
-Instead of directly using the model returned from `open_clip.create_model_and_transforms()` an onnx quantized model is used instead to improve performance and reduce memory usage. If for any reason you want to use the original model directly uncomment the following line in `main.py` and update accorindly:
-
-```bash
-    # Uncomment this line if you do not wish to use the quantized onnx model then add model to all the 4 function below using model=model
- # model, _, _ = open_clip.create_model_and_transforms(MODEL_NAME, pretrained=PRETRAINED)
-```
 ---
 
 ## Systemd Integration for Daily Scans
