@@ -1,5 +1,4 @@
 import os
-import torch
 import pickle
 import shutil
 import datetime
@@ -40,12 +39,12 @@ def move_file(file_path, target_dir):
         return None
     
 
-def save_embedding(filepath: str, embedding: torch.Tensor):
+def save_embedding(filepath: str, embedding: np.ndarray):
     """Saves a tensor embedding to a file."""
     with open(filepath, 'wb') as f:
         pickle.dump(embedding, f)
 
-def load_embedding(filepath: str) -> torch.Tensor:
+def load_embedding(filepath: str) -> np.ndarray:
     """Loads a tensor embedding from a file."""
     with open(filepath, 'rb') as f:
         return pickle.load(f)
