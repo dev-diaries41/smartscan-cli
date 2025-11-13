@@ -1,12 +1,14 @@
 from ml.models.providers.embeddings.embedding_provider import EmbeddingProvider
 from ml.models.onnx_model import OnnxModel
-from ml.models.providers.embeddings.clip.tokenizer.tokenizer import load_clip_tokenizer
+from ml.models.providers.embeddings.clip.tokenizer import load_clip_tokenizer
 import numpy as np
 from pathlib import Path
 from utils import read_text_file
+import os
 
-VOCAB_PATH = "sdk/models/providers/embeddings/clip/tokenizer/vocab.json"
-MERGES_PATH = "sdk/models/providers/embeddings/clip/tokenizer/merges.txt"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+VOCAB_PATH = os.path.join(BASE_DIR, "vocab.json")
+MERGES_PATH = os.path.join(BASE_DIR, "merges.txt")
 
 class ClipTextEmbedder(EmbeddingProvider):
     def __init__(self, model_path: str):
