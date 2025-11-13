@@ -24,6 +24,9 @@ def image_encoder_to_onnx(model_name: str, pretrained: str, output_path: str):
         model.visual.eval(),
         sample_input,
         tmp_model_path,
+        input_names=["input"],
+        output_names=["output"],
+        dynamic_axes={"input": {0: "batch_size"}, "output": {0: "batch_size"}}
     )
 
     quantize_dynamic(tmp_model_path, output_path, weight_type=QuantType.QInt8,
@@ -70,9 +73,9 @@ def text_encoder_to_onnx(model_name: str, pretrained: str, output_path: str):
     # Convert model to ONNX
     torch.onnx.export(
         text_encoder, input_tensor, tmp_model_path,
-        # input_names=["input"],
-        # output_names=["output"],
-        # dynamic_axes={"input": {0: "batch_size"}, "output": {0: "batch_size"}}
+        input_names=["input"],
+        output_names=["output"],
+        dynamic_axes={"input": {0: "batch_size"}, "output": {0: "batch_size"}}
     )
     quantize_dynamic(tmp_model_path, output_path, weight_type=QuantType.QInt8)
     print(f" Quantized model successfully exported to {output_path}")

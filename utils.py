@@ -2,19 +2,14 @@ import os
 import torch
 import pickle
 import shutil
-from PIL import Image
-import numpy as np
 import datetime
+import numpy as np
 
 def read_text_file(filepath: str):
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(f"File not found: {filepath}")
-    
-    try:
-        with open(filepath, 'r', encoding='utf-8') as file:
-            return file.read()
-    except Exception as e:
-        return f"Error reading file: {e}"
+   assert os.path.isfile(filepath), "Invalid file"
+   with open(filepath, 'r', encoding='utf-8') as file:
+            return file.read()       
+  
 
 def load_dir_list(dirlist_file):
     """Read the list of directory paths from the provided text file."""
@@ -64,57 +59,13 @@ def has_one_week_passed(file_path: str) -> bool:
     return days_since_modified % 7 == 0
 
 
-def preprocess(image: Image.Image) -> torch.Tensor:
-    """
-    Preprocesses the input PIL image to match the CLIP model input requirements.
-    
-    Steps:
-    1. Convert image to RGB.
-    2. Resize image so that the shortest edge is SIZE using bicubic interpolation.
-    3. Center crop to SIZE x SIZE.
-    4. Convert image to a NumPy array, scale pixel values to [0, 1].
-    5. Transpose to channel-first format.
-    6. Normalize using the OpenAI dataset mean and std.
-    
-    Args:
-        image (PIL.Image.Image): The input image.
-        
-    Returns:
-        torch.Tensor: The preprocessed image as a float32 tensor with shape (3, SIZE, SIZE).
-    """
-    SIZE = 224
-    MODE = 'RGB'
-    MEAN = (0.48145466, 0.4578275, 0.40821073)
-    STD = (0.26862954, 0.26130258, 0.27577711)
-    INTERPOLATION = Image.BICUBIC  # 'bicubic'
-    RESIZE_MODE = 'shortest'
-    FILL_COLOR = 0  # not used here since we resize based on shortest edge
+def generate_prototype_embedding(embeddings):    
+    embeddings_tensor = np.stack(embeddings, dim=0)
+    prototype = np.mean(embeddings_tensor, dim=0)
+    prototype /= np.linalg.norm(prototype)
+    return prototype
 
-    # 1. Convert to RGB if not already
-    image = image.convert(MODE)
-    
-    # 2. Resize based on the shortest edge
-    w, h = image.size
-    # Compute scaling factor so that the shortest edge becomes SIZE
-    scale = SIZE / min(w, h)
-    new_w, new_h = round(w * scale), round(h * scale)
-    image = image.resize((new_w, new_h), INTERPOLATION)
-    
-    # 3. Center crop to SIZE x SIZE
-    left = (new_w - SIZE) // 2
-    top = (new_h - SIZE) // 2
-    image = image.crop((left, top, left + SIZE, top + SIZE))
-    
-    # 4. Convert to NumPy array and scale pixel values to [0, 1]
-    img_array = np.array(image).astype(np.float32) / 255.0
-    
-    # 5. Transpose to channel-first format (C, H, W)
-    img_array = img_array.transpose(2, 0, 1)
-    
-    # 6. Normalize using the specified mean and std
-    mean = np.array(MEAN).reshape(3, 1, 1)
-    std = np.array(STD).reshape(3, 1, 1)
-    img_array = (img_array - mean) / std
-    
-    img_array = torch.from_numpy(img_array)
-    return img_array.to(torch.float32)
+
+def get_files_from_dir(dir_path, limit = 30):
+    assert os.path.isdir(dir_path), "Invalid directory"
+    return [ os.path.join(dir_path, filename) for filename in os.listdir(dir_path)[:limit]]    

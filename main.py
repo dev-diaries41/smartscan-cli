@@ -1,12 +1,13 @@
 #! /usr/bin/env python3
 
 import os
-import open_clip
 import argparse
-from compare import compare_files, compare_file_to_dir, compare_file_to_dirs, scan
 from utils import load_dir_list, move_file
 from onnx_utils.convert import text_encoder_to_onnx, image_encoder_to_onnx
 from constants import MODEL_NAME, PRETRAINED, TEXT_ENCODER_PATH, IMAGE_ENCODER_PATH
+from organiser import FileOrganiser
+from ml.models.providers.embeddings.clip.image import ClipImageEmbedder
+from ml.models.providers.embeddings.clip.text import ClipTextEmbedder
 
 
 
@@ -21,8 +22,16 @@ def main():
     if not os.path.exists(IMAGE_ENCODER_PATH):
         print("Image encoder model not found, creating it now...")
         image_encoder_to_onnx(MODEL_NAME, PRETRAINED, IMAGE_ENCODER_PATH)
-        
-            
+
+    file_organiser = FileOrganiser(
+        image_encoder=ClipImageEmbedder(IMAGE_ENCODER_PATH),
+        text_encoder=ClipTextEmbedder(TEXT_ENCODER_PATH),
+        similarity_threshold=0.4
+    )
+
+    file_organiser.image_encoder.init()
+    file_organiser.text_encoder.init()
+
     parser = argparse.ArgumentParser(
         description="CLI tool for comparing text or image embeddings and scanning directories."
     )
@@ -66,23 +75,20 @@ def main():
     )
 
     args = parser.parse_args()
-    tokenizer = open_clip.get_tokenizer('ViT-B-32')
-    # Uncomment this line if you do not wish to use the quantized onnx model then add model to all the 4 function below using model=model
-    # model, _, _ = open_clip.create_model_and_transforms(MODEL_NAME, pretrained=PRETRAINED)
 
     if args.command == "compare":
         if args.file:
             filepath1, filepath2 = args.file
             if not os.path.isfile(filepath1) or not os.path.isfile(filepath2):
                 raise argparse.ArgumentTypeError(f"One or both files not found: {filepath1}, {filepath2}")
-            similarity_score = compare_files(filepath1, filepath2, tokenizer)
+            similarity_score = file_organiser.compare_files(filepath1, filepath2)
             print(f"File-to-file similarity: {similarity_score}")
 
         elif args.dir:
             filepath, dirpath = args.dir
             if not os.path.isfile(filepath) or not os.path.isdir(dirpath):
                 raise argparse.ArgumentTypeError(f"Invalid file or directory: {filepath}, {dirpath}")
-            similarity_score = compare_file_to_dir(filepath, dirpath, tokenizer)
+            similarity_score = file_organiser.compare_file_to_dir(filepath, dirpath)
             print(f"File-to-directory similarity: {similarity_score}")
 
         elif args.dirs:
@@ -90,16 +96,17 @@ def main():
             if not os.path.isfile(filepath) or not os.path.isfile(dirlist_file):
                 raise argparse.ArgumentTypeError(f"Invalid file or directory list: {filepath}, {dirlist_file}")
             dirpaths = load_dir_list(dirlist_file)
-            best_dirpath, best_similarity = compare_file_to_dirs(filepath, dirpaths, tokenizer)
+            best_dirpath, best_similarity = file_organiser.compare_file_to_dirs(filepath, dirpaths)
             print(f"Best matching directory: {best_dirpath} with similarity: {best_similarity}")
 
     elif args.command == "scan":
+        file_organiser.similarity_threshold = args.threshold
         if not os.path.isfile(args.target_file) or not os.path.isfile(args.destination_file):
             raise argparse.ArgumentTypeError(f"Target or destination file not found: {args.target_file}, {args.destination_file}")
         
         target_dirs = load_dir_list(args.target_file)
         destination_dirs = load_dir_list(args.destination_file)
-        scan(target_dirs, destination_dirs, tokenizer, on_threshold_reached, threshold=args.threshold)
+        file_organiser.scan(target_dirs, destination_dirs, on_threshold_reached)
 
 if __name__ == "__main__":
     main()
