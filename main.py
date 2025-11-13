@@ -3,12 +3,10 @@
 import os
 import argparse
 from utils import load_dir_list, move_file
-from onnx_utils.convert import text_encoder_to_onnx, image_encoder_to_onnx
-from constants import MODEL_NAME, PRETRAINED, TEXT_ENCODER_PATH, IMAGE_ENCODER_PATH
+from constants import TEXT_ENCODER_PATH, IMAGE_ENCODER_PATH
 from organiser import FileOrganiser
 from ml.models.providers.embeddings.clip.image import ClipImageEmbedder
 from ml.models.providers.embeddings.clip.text import ClipTextEmbedder
-
 
 
 def on_threshold_reached(file_path: str, target_dir: str):
@@ -16,12 +14,10 @@ def on_threshold_reached(file_path: str, target_dir: str):
 
 def main():
     if not os.path.exists(TEXT_ENCODER_PATH):
-        print("Text encoder model not found, creating it now...")
-        text_encoder_to_onnx(MODEL_NAME, PRETRAINED, TEXT_ENCODER_PATH)
+        raise ValueError("Text encoder model not found")
 
     if not os.path.exists(IMAGE_ENCODER_PATH):
-        print("Image encoder model not found, creating it now...")
-        image_encoder_to_onnx(MODEL_NAME, PRETRAINED, IMAGE_ENCODER_PATH)
+        raise ValueError("Image encoder model not found")
 
     file_organiser = FileOrganiser(
         image_encoder=ClipImageEmbedder(IMAGE_ENCODER_PATH),
