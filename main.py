@@ -100,6 +100,7 @@ def main():
             print(f"Best matching directory: {best_dirpath} with similarity: {best_similarity}")
 
     elif args.command == "scan":
+        file_organiser.similarity_threshold = args.threshold
         if not os.path.isfile(args.target_file) or not os.path.isfile(args.destination_file):
             raise argparse.ArgumentTypeError(f"Target or destination file not found: {args.target_file}, {args.destination_file}")
         
