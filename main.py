@@ -3,26 +3,26 @@
 import os
 import argparse
 from utils import load_dir_list, move_file
-from constants import TEXT_ENCODER_PATH, IMAGE_ENCODER_PATH
+from constants import TEXT_ENCODER_PATH, IMAGE_ENCODER_PATH, MINILM_MODEL_PATH
 from organiser import FileOrganiser
 from ml.models.providers.embeddings.clip.image import ClipImageEmbedder
-from ml.models.providers.embeddings.clip.text import ClipTextEmbedder
+from ml.models.providers.embeddings.minilm.text import MiniLmTextEmbedder
 
 
 def on_threshold_reached(file_path: str, target_dir: str):
     move_file(file_path, target_dir)
 
 def main():
-    if not os.path.exists(TEXT_ENCODER_PATH):
-        raise ValueError("Text encoder model not found")
+    if not os.path.exists(MINILM_MODEL_PATH):
+        raise ValueError(f"Text encoder model not found: {MINILM_MODEL_PATH} ")
 
     if not os.path.exists(IMAGE_ENCODER_PATH):
-        raise ValueError("Image encoder model not found")
+        raise ValueError(f"Image encoder model not found: {IMAGE_ENCODER_PATH}")
 
     file_organiser = FileOrganiser(
         image_encoder=ClipImageEmbedder(IMAGE_ENCODER_PATH),
-        text_encoder=ClipTextEmbedder(TEXT_ENCODER_PATH),
-        similarity_threshold=0.4
+        text_encoder=MiniLmTextEmbedder(MINILM_MODEL_PATH),
+        similarity_threshold=0.52
     )
 
     file_organiser.image_encoder.init()
