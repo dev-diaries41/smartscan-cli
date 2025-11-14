@@ -2,12 +2,12 @@
 
 import os
 import argparse
-from utils.file import load_dir_list, get_files_from_dirs
-from constants import TEXT_ENCODER_PATH, IMAGE_ENCODER_PATH, MINILM_MODEL_PATH
-from organiser.analyser import FileAnalyser
-from organiser.scanner import FileScanner
-from ml.providers.embeddings.clip.image import ClipImageEmbedder
-from ml.providers.embeddings.minilm.text import MiniLmTextEmbedder
+from smartscan.utils.file import load_dir_list, get_files_from_dirs
+from smartscan.constants import TEXT_ENCODER_PATH, IMAGE_ENCODER_PATH, MINILM_MODEL_PATH
+from smartscan.organiser.analyser import FileAnalyser
+from smartscan.organiser.scanner import FileScanner
+from smartscan.ml.providers.embeddings.clip.image import ClipImageEmbedder
+from smartscan.ml.providers.embeddings.minilm.text import MiniLmTextEmbedder
 
 
 def main():
@@ -20,7 +20,7 @@ def main():
     file_analyser = FileAnalyser(
         image_encoder=ClipImageEmbedder(IMAGE_ENCODER_PATH),
         text_encoder=MiniLmTextEmbedder(MINILM_MODEL_PATH),
-        similarity_threshold=0.52
+        similarity_threshold=0.4
     )
 
     file_analyser.image_encoder.init()
@@ -65,8 +65,8 @@ def main():
     scan_parser.add_argument(
         "-t", "--threshold",
         type=float,
-        default=0.7,
-        help="Similarity threshold for the scan mode. Default is 0.7."
+        default=0.4,
+        help="Similarity threshold for the scan mode. Default is 0.4."
     )
 
     args = parser.parse_args()
@@ -91,8 +91,10 @@ def main():
             if not os.path.isfile(filepath) or not os.path.isfile(dirlist_file):
                 raise argparse.ArgumentTypeError(f"Invalid file or directory list: {filepath}, {dirlist_file}")
             dirpaths = load_dir_list(dirlist_file)
-            best_dirpath, best_similarity = file_analyser.compare_file_to_dirs(filepath, dirpaths)
-            print(f"Best matching directory: {best_dirpath} with similarity: {best_similarity}")
+            dirs_similarities = file_analyser.compare_file_to_dirs(filepath, dirpaths)
+            print(f"File-to-directories similarity\n--------------------------\n")
+            for (key, value) in sorted(dirs_similarities.items(), reverse=True):
+                print(f"Directory: {key} | Similarity: {value}")
 
     elif args.command == "scan":
         file_analyser.similarity_threshold = args.threshold

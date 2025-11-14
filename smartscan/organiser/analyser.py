@@ -1,9 +1,9 @@
-from ml.providers.embeddings.embedding_provider import EmbeddingProvider
 import os
-from utils.file import save_embedding, load_embedding, get_days_since_last_modified
-from utils.ml_ops import generate_prototype_embedding
-from typing import List
 import numpy as np
+from typing import List
+from smartscan.ml.providers.embeddings.embedding_provider import EmbeddingProvider
+from smartscan.utils.file import save_embedding, load_embedding, get_days_since_last_modified
+from smartscan.utils.ml_ops import generate_prototype_embedding
 
 
 class FileAnalyser():

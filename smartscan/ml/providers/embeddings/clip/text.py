@@ -1,10 +1,10 @@
-from ml.providers.embeddings.embedding_provider import EmbeddingProvider
-from ml.models.onnx_model import OnnxModel
-from ml.providers.embeddings.clip.tokenizer import load_clip_tokenizer
 import numpy as np
-from pathlib import Path
-from smartscan.utils import read_text_file
 import os
+from pathlib import Path
+from smartscan.ml.providers.embeddings.embedding_provider import EmbeddingProvider
+from smartscan.ml.models.onnx_model import OnnxModel
+from smartscan.ml.providers.embeddings.clip.tokenizer import load_clip_tokenizer
+from smartscan.utils.file import read_text_file
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 VOCAB_PATH = os.path.join(BASE_DIR, "vocab.json")

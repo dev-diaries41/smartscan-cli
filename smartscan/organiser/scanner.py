@@ -1,8 +1,8 @@
 import os
 from typing import List
-from organiser.analyser import FileAnalyser
-from processor.processor import BatchProcessor
-from utils.file import move_file
+from smartscan.organiser.analyser import FileAnalyser
+from smartscan.processor.processor import BatchProcessor
+from smartscan.utils.file import move_file
 
 class FileScanner(BatchProcessor[str, tuple[str, str]]):
     def __init__(self, 
