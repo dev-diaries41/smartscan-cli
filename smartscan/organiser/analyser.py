@@ -62,13 +62,13 @@ class FileAnalyser():
         return self.compare_embedding_to_dir(file_embedding, dirpath, embedder)
 
 
-    def compare_file_to_dirs(self, filepath: str, dirpaths: List[str]):
+    def compare_file_to_dirs(self, filepath: str, dirpaths: List[str]) -> dict[str, float]:
             """
-            Compute the cosine similarities between a file and multiple directories, returning
-            the best matching directory and its similarity score.
+            Compute the cosine similarities between a file and multiple directories, and return
+            a directory to similarity dict.
             """
-            best_similarity = -float("inf")
-            best_dirpath = None
+
+            dirs_similarities: dict[str, float] = {}
 
             is_image_mode = all(path.lower().endswith(self.valid_img_exts) for path in [filepath])
             is_text_mode = all(path.lower().endswith(self.valid_txt_exts) for path in [filepath])
@@ -86,12 +86,10 @@ class FileAnalyser():
                 except Exception as e:
                     print(f"[WARNING] Error comparing embeddings for directory {dirpath}: {e}")
                     continue
+                
+                dirs_similarities[dirpath] = similarity
 
-                if similarity > best_similarity:
-                    best_similarity = similarity
-                    best_dirpath = dirpath
-
-            return best_dirpath, best_similarity
+            return dirs_similarities
     
 
     def generate_prototype_for_dir(self, dirpath, embedder: EmbeddingProvider):
