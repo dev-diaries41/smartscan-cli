@@ -1,14 +1,10 @@
 from ml.providers.embeddings.embedding_provider import EmbeddingProvider
 import os
-from utils import save_embedding, load_embedding, has_one_week_passed, generate_prototype_embedding
-from typing import List, Callable, Any
+from utils.file import save_embedding, load_embedding, get_days_since_last_modified
+from utils.ml_ops import generate_prototype_embedding
+from typing import List, Callable
 import numpy as np
-from enum import IntEnum
 
-class FileType(IntEnum):
-    TEXT = 0
-    IMAGE = 1
-    VIDEO = 2
 
 class FileOrganiser():
     def __init__(self, 
@@ -97,7 +93,11 @@ class FileOrganiser():
             for dirpath in dirpaths:
                 prototype_embedding_filepath = os.path.join(dirpath, "prototype_embedding.pkl")
                 try:
-                    if os.path.exists(prototype_embedding_filepath) and not has_one_week_passed(prototype_embedding_filepath):
+                    refresh_protoype_duraiton = 7
+
+                    should_refresh_prototype = get_days_since_last_modified(prototype_embedding_filepath) >= refresh_protoype_duraiton
+
+                    if os.path.exists(prototype_embedding_filepath) and not should_refresh_prototype:
                         prototype_embedding = load_embedding(prototype_embedding_filepath)
                     else:
                         prototype_embedding = self.generate_prototype_for_dir(dirpath, embedder)
