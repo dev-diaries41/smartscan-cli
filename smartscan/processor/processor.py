@@ -3,15 +3,28 @@ from abc import ABC, abstractmethod
 from typing import Generic
 from smartscan.processor.types import Input, Output, MetricsFailure, MetricsSuccess
 from smartscan.processor.processor_listener import ProcessorListener
+from smartscan.processor.memory import MemoryManager
 import time
 from asyncio import Semaphore
 
 
 class BatchProcessor(ABC, Generic[Input, Output]):
-    def __init__(self, batch_size = 10, concurrency = 4, listener: None | ProcessorListener[Input, Output] = None):
+    def __init__(self,
+                 listener: None | ProcessorListener[Input, Output] = None,
+                 batch_size = 10, 
+                 low_memory_threshold: int = 400,
+                 high_memory_threshold: int = 1600,
+                 min_concurrency: int = 1,
+                 max_concurrency: int = 8,
+                 ):
         self.batch_size = batch_size
-        self.concurrency = concurrency
         self.listener = listener
+        self.memory_manager = MemoryManager(
+            low_memory_threshold=low_memory_threshold,
+            high_memory_threshold=high_memory_threshold, 
+            min_concurrency=min_concurrency, 
+            max_concurrency=max_concurrency
+            )
 
     async def run(self, items: list[Input]):
         start = time.perf_counter()
@@ -32,7 +45,8 @@ class BatchProcessor(ABC, Generic[Input, Output]):
             batch_start = 0
 
             while batch_start < len(items):
-                semaphore = Semaphore(self.concurrency) #place holder fo rnow will be calculated dynamically based on memory
+                concurrency = self.memory_manager.calculate_concurrency()
+                semaphore = Semaphore(concurrency)
                 batch_end = batch_start + self.batch_size
                 batch = items[batch_start : batch_end]
                 
