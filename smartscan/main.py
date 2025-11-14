@@ -5,8 +5,8 @@ import argparse
 from utils import load_dir_list, move_file
 from constants import TEXT_ENCODER_PATH, IMAGE_ENCODER_PATH, MINILM_MODEL_PATH
 from organiser import FileOrganiser
-from ml.models.providers.embeddings.clip.image import ClipImageEmbedder
-from ml.models.providers.embeddings.minilm.text import MiniLmTextEmbedder
+from ml.providers.embeddings.clip.image import ClipImageEmbedder
+from ml.providers.embeddings.minilm.text import MiniLmTextEmbedder
 
 
 def on_threshold_reached(file_path: str, target_dir: str):
