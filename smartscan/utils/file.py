@@ -57,3 +57,11 @@ def get_days_since_last_modified(file_path: str) -> int:
     days_since_modified = (current_date - last_modified_date).days
     return days_since_modified 
 
+def get_files_from_dirs(dirs: list[str]):
+    paths = []
+
+    for d in dirs:
+        if os.path.isdir(d):
+            for filename in os.listdir(d):
+                paths.append(os.path.join(d, filename))
+    return paths
