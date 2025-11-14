@@ -58,7 +58,8 @@ class BatchProcessor(ABC, Generic[Input, Output]):
                 batch_outputs = await asyncio.gather(*tasks)
                 filtered_batch_ouptputs = [out for out in batch_outputs if out is not None]
                 success_count += len(filtered_batch_ouptputs)
-                self.on_batch_complete(filtered_batch_ouptputs)
+                await self.on_batch_complete(filtered_batch_ouptputs)
+                
                 batch_start += self.batch_size
             
             end = time.perf_counter()
@@ -78,6 +79,6 @@ class BatchProcessor(ABC, Generic[Input, Output]):
         pass 
 
     @abstractmethod
-    def on_batch_complete(self, batch: list[Output]):
+    async def on_batch_complete(self, batch: list[Output]):
         pass 
 
