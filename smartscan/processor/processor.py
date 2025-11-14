@@ -6,6 +6,7 @@ from typing import Generic
 from smartscan.processor.types import Input, Output, MetricsFailure, MetricsSuccess
 from smartscan.processor.processor_listener import ProcessorListener
 from smartscan.processor.memory import MemoryManager
+from smartscan.utils.async_utils import AtomicInteger
 
 
 class BatchProcessor(ABC, Generic[Input, Output]):
@@ -28,7 +29,7 @@ class BatchProcessor(ABC, Generic[Input, Output]):
 
     async def run(self, items: list[Input]):
         start = time.perf_counter()
-        processed_count = 0
+        processed_count = AtomicInteger(0)
         success_count = 0
 
         try:
@@ -45,22 +46,18 @@ class BatchProcessor(ABC, Generic[Input, Output]):
             batch_start = 0
 
             async def async_task(item: Input):
-                    def task(item: Input) -> Output | None:
-                        nonlocal processed_count
-
-                        try:
-                            return self.on_process(item)
-                        except Exception as e:
-                            if self.listener is not None:
-                                self.listener.on_error(e, item)
-                            return None
-                        finally:
-                            if self.listener is not None:
-                                    processed_count += 1
-                                    progress = processed_count / len(items)
-                                    self.listener.on_progress(progress)
-                    async with semaphore:
-                        return await asyncio.to_thread(task, item)
+                async with semaphore:
+                    try:
+                        return await asyncio.to_thread(self.on_process, item)
+                    except Exception as e:
+                        if self.listener is not None:
+                            self.listener.on_error(e, item)
+                        return None
+                    finally:
+                        if self.listener is not None:
+                            current = await processed_count.increment_and_get()
+                            progress = current / len(items)
+                            self.listener.on_progress(progress)
 
             while batch_start < len(items):
                 concurrency = self.memory_manager.calculate_concurrency()
