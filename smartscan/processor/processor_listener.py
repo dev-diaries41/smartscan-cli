@@ -4,7 +4,6 @@ from smartscan.processor.types import Input, Output, MetricsFailure, MetricsSucc
 
 
 class ProcessorListener(ABC, Generic[Input, Output]):
-    @abstractmethod
     def on_active(self):
         pass
     def on_progress(self, progress: float):
