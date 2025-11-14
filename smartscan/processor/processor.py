@@ -45,7 +45,7 @@ class BatchProcessor(ABC, Generic[Input, Output]):
             
             batch_start = 0
 
-            async def async_task(item: Input):
+            async def async_task(item: Input, semaphore: Semaphore):
                 async with semaphore:
                     try:
                         return await asyncio.to_thread(self.on_process, item)
@@ -64,7 +64,7 @@ class BatchProcessor(ABC, Generic[Input, Output]):
                 semaphore = Semaphore(concurrency)
                 batch_end = batch_start + self.batch_size
                 batch = items[batch_start : batch_end]
-                tasks = [async_task(item) for item in batch]
+                tasks = [async_task(item, semaphore) for item in batch]
                 batch_outputs = await asyncio.gather(*tasks)
                 filtered_batch_ouptputs = [out for out in batch_outputs if out is not None]
                 success_count += len(filtered_batch_ouptputs)
