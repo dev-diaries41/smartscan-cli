@@ -2,8 +2,8 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 def generate_prototype_embedding(embeddings):    
-    embeddings_tensor = np.stack(embeddings, dim=0)
-    prototype = np.mean(embeddings_tensor, dim=0)
+    embeddings_tensor = np.stack(embeddings, axis=0)
+    prototype = np.mean(embeddings_tensor, axis=0)
     prototype /= np.linalg.norm(prototype)
     return prototype
 
