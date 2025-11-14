@@ -12,6 +12,7 @@ class FileAnalyser():
                  text_encoder: EmbeddingProvider,
                  similarity_threshold: float,
                  max_files_for_prototypes: int = 30,
+                 refresh_prototype_duration: int  = 7,
                  ):
         self.image_encoder = image_encoder
         self.text_encoder = text_encoder
@@ -19,6 +20,7 @@ class FileAnalyser():
         self.valid_img_exts = ('.png', '.jpg', '.jpeg', '.bmp', '.gif')
         self.valid_txt_exts = ('.txt', '.md', '.rst', '.html', '.json')
         self.max_files_for_prototypes = max_files_for_prototypes
+        self.refresh_prototype_duration = refresh_prototype_duration
 
     def compare_files(self, filepath1: str, filepath2: str):
         """Compute the cosine similarity between two files' embeddings."""
@@ -31,22 +33,6 @@ class FileAnalyser():
 
         embeddings = embedder.embed_batch([filepath1, filepath2])
         return np.dot(embeddings[0], embeddings[1])
-    
-
-    def generate_prototype_for_dir(self, dirpath, embedder: EmbeddingProvider):
-        files = [os.path.join(dirpath, f) for f in os.listdir()[:self.max_files_for_prototypes]]
-        pos = 0
-        chunk_size = 4
-        embeddings = []
-        while(pos < len(files)):
-            file_batch = files[pos : (pos + chunk_size)]
-            batch_embeddings = embedder.embed_batch(file_batch)
-            embeddings.append(batch_embeddings)
-            pos += chunk_size
-        
-        embeddings = np.array(batch_embeddings)
-        prototype_embedding = generate_prototype_embedding(embeddings)
-        return prototype_embedding
     
     def compare_file_to_dir(self, filepath: str, dirpath: str):
         """
@@ -62,7 +48,7 @@ class FileAnalyser():
         assert embedder is not None, "Both files must be of the same type e.g both image files or both text files"
 
     
-        if os.path.exists(prototype_embedding_filepath):
+        if os.path.exists(prototype_embedding_filepath) and not self.is_prototype_stale(prototype_embedding_filepath):
             prototype_embedding = load_embedding(prototype_embedding_filepath)
         else:
             prototype_embedding = self.generate_prototype_for_dir(dirpath, embedder)
@@ -93,11 +79,7 @@ class FileAnalyser():
             for dirpath in dirpaths:
                 prototype_embedding_filepath = os.path.join(dirpath, "prototype_embedding.pkl")
                 try:
-                    refresh_protoype_duraiton = 7
-
-                    should_refresh_prototype = get_days_since_last_modified(prototype_embedding_filepath) >= refresh_protoype_duraiton
-
-                    if os.path.exists(prototype_embedding_filepath) and not should_refresh_prototype:
+                    if os.path.exists(prototype_embedding_filepath) and not self.is_prototype_stale(prototype_embedding_filepath):
                         prototype_embedding = load_embedding(prototype_embedding_filepath)
                     else:
                         prototype_embedding = self.generate_prototype_for_dir(dirpath, embedder)
@@ -117,3 +99,23 @@ class FileAnalyser():
                     best_dirpath = dirpath
 
             return best_dirpath, best_similarity
+    
+
+    def generate_prototype_for_dir(self, dirpath, embedder: EmbeddingProvider):
+        files = [os.path.join(dirpath, f) for f in os.listdir()[:self.max_files_for_prototypes]]
+        pos = 0
+        chunk_size = 4
+        embeddings = []
+        while(pos < len(files)):
+            file_batch = files[pos : (pos + chunk_size)]
+            batch_embeddings = embedder.embed_batch(file_batch)
+            embeddings.append(batch_embeddings)
+            pos += chunk_size
+        
+        embeddings = np.array(batch_embeddings)
+        prototype_embedding = generate_prototype_embedding(embeddings)
+        return prototype_embedding
+    
+    def is_prototype_stale(self, path: str) -> bool:
+        return get_days_since_last_modified(path) > self.refresh_prototype_duration
+
