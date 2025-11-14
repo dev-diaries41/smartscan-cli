@@ -1,4 +1,4 @@
-from ml.models.providers.embeddings.embedding_provider import EmbeddingProvider
+from ml.providers.embeddings.embedding_provider import EmbeddingProvider
 import os
 from utils import save_embedding, load_embedding, has_one_week_passed
 from typing import List, Callable, Any

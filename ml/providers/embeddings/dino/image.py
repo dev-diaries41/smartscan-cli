@@ -1,18 +1,17 @@
-from ml.models.providers.embeddings.embedding_provider import EmbeddingProvider
+from ml.providers.embeddings.embedding_provider import EmbeddingProvider
 from PIL import Image
 from ml.models.onnx_model import OnnxModel
 import numpy as np
 import io
 
 
-class ClipImageEmbedder(EmbeddingProvider):
+class DinoSmallV2ImageEmbedder(EmbeddingProvider):
     def __init__(self, model_path: str):
         self._model = OnnxModel(model_path)
-        self._embedding_dim = 512
 
     @property
     def embedding_dim(self) -> int:
-        return self._embedding_dim
+        return 384
 
     def embed(self, data: str | bytes):
         """Create vector embeddings for text or image files using an ONNX model."""
@@ -51,32 +50,38 @@ class ClipImageEmbedder(EmbeddingProvider):
         return self._model.is_load()
     
     @staticmethod
-    def _preprocess(image: Image.Image):
-        SIZE = 224
+    def _preprocess(image: Image.Image) -> np.ndarray:
         MODE = 'RGB'
-        MEAN = (0.48145466, 0.4578275, 0.40821073)
-        STD = (0.26862954, 0.26130258, 0.27577711)
-        INTERPOLATION = Image.BICUBIC
-
+        SIZE = 224
+        RESAMPLE=Image.BICUBIC
+        MEAN=(0.485, 0.456, 0.406)
+        STD=(0.229, 0.224, 0.225)
+        
         image = image.convert(MODE)
-        
-        # Resize based on the shortest edge
+
+        # Resize shorter side to output_size / crop_pct (224/0.875 = 256)
+        crop_pct = SIZE / (SIZE / 0.875) 
+        scale_size = int(SIZE / crop_pct + 0.5) 
+
         w, h = image.size
-        scale = SIZE / min(w, h)
-        new_w, new_h = round(w * scale), round(h * scale)
-        image = image.resize((new_w, new_h), INTERPOLATION)
-        
+        if h < w:
+            new_h = scale_size
+            new_w = int(w * (scale_size / h))
+        else:
+            new_w = scale_size
+            new_h = int(h * (scale_size / w))
+        image = image.resize((new_w, new_h), resample=RESAMPLE)
+
         left = (new_w - SIZE) // 2
-        top = (new_h - SIZE) // 2
+        top  = (new_h - SIZE) // 2
         image = image.crop((left, top, left + SIZE, top + SIZE))
-        
-        img_array = np.array(image).astype(np.float32) / 255.0
-        
-        img_array = img_array.transpose(2, 0, 1)
-        img_array = np.expand_dims(img_array, axis=0)
-        
-        # channel-first normalization tensors so normalization must happen after transposing
-        mean = np.array(MEAN).reshape(3, 1, 1)
-        std = np.array(STD).reshape(3, 1, 1)
-        img_array = (img_array - mean) / std
-        return img_array.astype(dtype=np.float32)
+
+        arr = np.asarray(image, dtype=np.float32) / 255.0
+
+        mean = np.array(MEAN, dtype=np.float32)
+        std  = np.array(STD,  dtype=np.float32)
+        arr = (arr - mean) / std
+
+        arr = arr.transpose(2, 0, 1)
+        arr = np.expand_dims(arr, axis=0)
+        return arr.astype(dtype=np.float32)
