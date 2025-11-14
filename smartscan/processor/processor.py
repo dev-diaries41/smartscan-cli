@@ -73,11 +73,13 @@ class BatchProcessor(ABC, Generic[Input, Output]):
             if self.listener is not None:
                 self.listener.on_fail(result)
             return result
-    
+        
+    # Doesnt need to be async becasue its wrapped in asyncio.to_thread
     @abstractmethod
     def on_process(self, item: Input) -> Output:
         pass 
 
+    # Could even IO operations
     @abstractmethod
     async def on_batch_complete(self, batch: list[Output]):
         pass 
