@@ -44,13 +44,7 @@ class BatchProcessor(ABC, Generic[Input, Output]):
             
             batch_start = 0
 
-            while batch_start < len(items):
-                concurrency = self.memory_manager.calculate_concurrency()
-                semaphore = Semaphore(concurrency)
-                batch_end = batch_start + self.batch_size
-                batch = items[batch_start : batch_end]
-                
-                async def async_task(item: Input):
+            async def async_task(item: Input):
                     def task(item: Input) -> Output | None:
                         nonlocal processed_count
 
@@ -67,7 +61,12 @@ class BatchProcessor(ABC, Generic[Input, Output]):
                                     self.listener.on_progress(progress)
                     async with semaphore:
                         return await asyncio.to_thread(task, item)
-                    
+
+            while batch_start < len(items):
+                concurrency = self.memory_manager.calculate_concurrency()
+                semaphore = Semaphore(concurrency)
+                batch_end = batch_start + self.batch_size
+                batch = items[batch_start : batch_end]
                 tasks = [async_task(item) for item in batch]
                 batch_outputs = await asyncio.gather(*tasks)
                 filtered_batch_ouptputs = [out for out in batch_outputs if out is not None]
