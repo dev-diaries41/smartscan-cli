@@ -1,9 +1,8 @@
 from ml.providers.embeddings.embedding_provider import EmbeddingProvider
 import os
-from utils import save_embedding, load_embedding, has_one_week_passed
+from utils import save_embedding, load_embedding, has_one_week_passed, generate_prototype_embedding
 from typing import List, Callable, Any
 import numpy as np
-from utils import generate_prototype_embedding
 from enum import IntEnum
 
 class FileType(IntEnum):

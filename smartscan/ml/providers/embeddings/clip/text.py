@@ -3,7 +3,7 @@ from ml.models.onnx_model import OnnxModel
 from ml.providers.embeddings.clip.tokenizer import load_clip_tokenizer
 import numpy as np
 from pathlib import Path
-from utils import read_text_file
+from smartscan.utils import read_text_file
 import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
