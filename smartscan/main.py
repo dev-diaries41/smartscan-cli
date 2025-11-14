@@ -2,15 +2,13 @@
 
 import os
 import argparse
-from utils import load_dir_list, move_file
+from utils.file import load_dir_list, get_files_from_dirs
 from constants import TEXT_ENCODER_PATH, IMAGE_ENCODER_PATH, MINILM_MODEL_PATH
-from organiser import FileOrganiser
+from organiser.analyser import FileAnalyser
+from organiser.scanner import FileScanner
 from ml.providers.embeddings.clip.image import ClipImageEmbedder
 from ml.providers.embeddings.minilm.text import MiniLmTextEmbedder
 
-
-def on_threshold_reached(file_path: str, target_dir: str):
-    move_file(file_path, target_dir)
 
 def main():
     if not os.path.exists(MINILM_MODEL_PATH):
@@ -19,14 +17,15 @@ def main():
     if not os.path.exists(IMAGE_ENCODER_PATH):
         raise ValueError(f"Image encoder model not found: {IMAGE_ENCODER_PATH}")
 
-    file_organiser = FileOrganiser(
+    file_analyser = FileAnalyser(
         image_encoder=ClipImageEmbedder(IMAGE_ENCODER_PATH),
         text_encoder=MiniLmTextEmbedder(MINILM_MODEL_PATH),
         similarity_threshold=0.52
     )
 
-    file_organiser.image_encoder.init()
-    file_organiser.text_encoder.init()
+    file_analyser.image_encoder.init()
+    file_analyser.text_encoder.init()
+
 
     parser = argparse.ArgumentParser(
         description="CLI tool for comparing text or image embeddings and scanning directories."
@@ -77,14 +76,14 @@ def main():
             filepath1, filepath2 = args.file
             if not os.path.isfile(filepath1) or not os.path.isfile(filepath2):
                 raise argparse.ArgumentTypeError(f"One or both files not found: {filepath1}, {filepath2}")
-            similarity_score = file_organiser.compare_files(filepath1, filepath2)
+            similarity_score = file_analyser.compare_files(filepath1, filepath2)
             print(f"File-to-file similarity: {similarity_score}")
 
         elif args.dir:
             filepath, dirpath = args.dir
             if not os.path.isfile(filepath) or not os.path.isdir(dirpath):
                 raise argparse.ArgumentTypeError(f"Invalid file or directory: {filepath}, {dirpath}")
-            similarity_score = file_organiser.compare_file_to_dir(filepath, dirpath)
+            similarity_score = file_analyser.compare_file_to_dir(filepath, dirpath)
             print(f"File-to-directory similarity: {similarity_score}")
 
         elif args.dirs:
@@ -92,17 +91,18 @@ def main():
             if not os.path.isfile(filepath) or not os.path.isfile(dirlist_file):
                 raise argparse.ArgumentTypeError(f"Invalid file or directory list: {filepath}, {dirlist_file}")
             dirpaths = load_dir_list(dirlist_file)
-            best_dirpath, best_similarity = file_organiser.compare_file_to_dirs(filepath, dirpaths)
+            best_dirpath, best_similarity = file_analyser.compare_file_to_dirs(filepath, dirpaths)
             print(f"Best matching directory: {best_dirpath} with similarity: {best_similarity}")
 
     elif args.command == "scan":
-        file_organiser.similarity_threshold = args.threshold
+        file_analyser.similarity_threshold = args.threshold
         if not os.path.isfile(args.target_file) or not os.path.isfile(args.destination_file):
             raise argparse.ArgumentTypeError(f"Target or destination file not found: {args.target_file}, {args.destination_file}")
         
         target_dirs = load_dir_list(args.target_file)
         destination_dirs = load_dir_list(args.destination_file)
-        file_organiser.scan(target_dirs, destination_dirs, on_threshold_reached)
+        file_scanner = FileScanner(analyser=file_analyser, destination_dirs=destination_dirs)
+        file_scanner.run(get_files_from_dirs(target_dirs))
 
 if __name__ == "__main__":
     main()
