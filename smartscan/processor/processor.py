@@ -51,9 +51,9 @@ class BatchProcessor(ABC, Generic[Input, Output]):
                 batch = items[batch_start : batch_end]
                 
                 async def async_task(item: Input):
-                    nonlocal processed_count
-
                     def task(item: Input) -> Output | None:
+                        nonlocal processed_count
+
                         try:
                             return self.on_process(item)
                         except Exception as e:
