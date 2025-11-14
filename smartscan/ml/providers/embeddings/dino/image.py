@@ -1,8 +1,8 @@
-from ml.providers.embeddings.embedding_provider import EmbeddingProvider
-from PIL import Image
-from ml.models.onnx_model import OnnxModel
 import numpy as np
 import io
+from PIL import Image
+from smartscan.ml.providers.embeddings.embedding_provider import EmbeddingProvider
+from smartscan.ml.models.onnx_model import OnnxModel
 
 
 class DinoSmallV2ImageEmbedder(EmbeddingProvider):

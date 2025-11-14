@@ -1,11 +1,11 @@
+import time
 import asyncio
+from asyncio import Semaphore
 from abc import ABC, abstractmethod
 from typing import Generic
 from smartscan.processor.types import Input, Output, MetricsFailure, MetricsSuccess
 from smartscan.processor.processor_listener import ProcessorListener
 from smartscan.processor.memory import MemoryManager
-import time
-from asyncio import Semaphore
 
 
 class BatchProcessor(ABC, Generic[Input, Output]):
