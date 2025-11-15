@@ -1,5 +1,4 @@
 import os
-import pickle
 import shutil
 import datetime
 import numpy as np
@@ -7,6 +6,7 @@ import subprocess
 import numpy as np
 import re
 from pathlib import Path
+from smartscan.constants import EMBEDDING_PROVIDERS_DIR
 
 def read_text_file(filepath: str):
    assert os.path.isfile(filepath), "Invalid file"
@@ -38,17 +38,6 @@ def move_file(file_path, target_dir):
     except Exception as e:
         print(f"Error moving file: {e}")
         return None
-
-
-def save_embedding(filepath: str, embedding: np.ndarray):
-    """Saves a tensor embedding to a file."""
-    with open(filepath, 'wb') as f:
-        pickle.dump(embedding, f)
-
-def load_embedding(filepath: str) -> np.ndarray:
-    """Loads a tensor embedding from a file."""
-    with open(filepath, 'rb') as f:
-        return pickle.load(f)
     
 
 def get_days_since_last_modified(file_path: str) -> int:
@@ -90,13 +79,11 @@ def get_files_from_dirs(dirs: list[str], dir_skip_patterns: list[str] = [], allo
     return paths
 
 
-
 def get_frames_from_video(video_path: str, n_frames: int):
     """
     Extract `n` evenly spaced frames from a video using one FFmpeg process.
     Returns a list of frames as NumPy arrays (H, W, 3, dtype=uint8) at original resolution.
     """
-    # Probe video for original width, height, and duration
     cmd_probe = ["ffmpeg", "-i", video_path]
     proc = subprocess.Popen(cmd_probe, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     _, err = proc.communicate()
@@ -115,10 +102,6 @@ def get_frames_from_video(video_path: str, n_frames: int):
     hours, minutes, seconds = map(float, match_dur.groups())
     duration = hours*3600 + minutes*60 + seconds
 
-    # Calculate timestamps
-    timestamps = [duration * i / n_frames for i in range(n_frames)]
-
-    # FFmpeg command: extract frames evenly by setting fps
     cmd = [
         "ffmpeg",
         "-i", video_path,
@@ -145,3 +128,12 @@ def get_frames_from_video(video_path: str, n_frames: int):
     proc.wait()
     return frames
 
+
+def list_embedding_providers() -> dict[str, str]:
+    paths = get_files_from_dirs([EMBEDDING_PROVIDERS_DIR], allowed_exts=('.py'))
+    filtered_paths = [p for p in paths if any(emb_type in p for emb_type in ('face', 'image', 'text'))]
+    providers = {}
+    for p in filtered_paths:
+        path = Path(p)
+        providers[f"{path.parent.name}_{path.stem}"] = path.stem
+    return providers

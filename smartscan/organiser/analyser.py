@@ -1,12 +1,13 @@
 import os
 import numpy as np
+import pickle
 from typing import List
 from enum import IntEnum
 from PIL import Image
 
 from smartscan.ml.providers.embeddings.embedding_provider import EmbeddingProvider
-from smartscan.utils.file import save_embedding, load_embedding, get_days_since_last_modified, get_files_from_dirs, read_text_file, get_frames_from_video
-from smartscan.utils.ml_ops import generate_prototype_embedding
+from smartscan.utils.file import get_days_since_last_modified, get_files_from_dirs, read_text_file
+from smartscan.utils.embeddings import generate_prototype_embedding, embed_video
 
 
 class AnalyserMode(IntEnum):
@@ -47,7 +48,7 @@ class FileAnalyser:
             embedder = self.text_encoder
             embeddings = embedder.embed_batch([read_text_file(path) for path in [filepath1, filepath2]])
         elif is_video_mode:
-            embeddings = np.stack([self._embed_video(path) for path in [filepath1, filepath2]], axis=0)
+            embeddings = np.stack([embed_video(path, self.n_frames, self.image_encoder) for path in [filepath1, filepath2]], axis=0)
         else:
             raise ValueError("Unsupported file type: Both files must be of the same type")
 
@@ -57,10 +58,10 @@ class FileAnalyser:
     def compare_embedding_to_dir(self, embedding: np.ndarray, dirpath: str, embedder: EmbeddingProvider, mode: AnalyserMode):
         prototype_embedding_filepath = self._get_prototype_path(dirpath, mode)
         if os.path.exists(prototype_embedding_filepath) and not self._is_prototype_stale(prototype_embedding_filepath):
-            prototype_embedding = load_embedding(prototype_embedding_filepath)
+            prototype_embedding = self.load_embedding(prototype_embedding_filepath)
         else:
             prototype_embedding = self._generate_prototype_for_dir(dirpath, embedder, mode)
-            save_embedding(prototype_embedding_filepath, prototype_embedding)
+            self.save_embedding(prototype_embedding_filepath, prototype_embedding)
         return np.dot(embedding, prototype_embedding)
     
     
@@ -83,7 +84,7 @@ class FileAnalyser:
         elif is_video_mode:
             mode = AnalyserMode.VIDEO
             embedder = self.image_encoder
-            file_embedding = self._embed_video(filepath)
+            file_embedding = embed_video(filepath, self.n_frames, self.image_encoder)
         else:
             raise ValueError("Unsupported file type")
         
@@ -113,7 +114,7 @@ class FileAnalyser:
             elif is_video_mode:
                 mode = AnalyserMode.VIDEO
                 embedder = self.image_encoder
-                file_embedding = self._embed_video(filepath)
+                file_embedding = embed_video(filepath, self.n_frames, self.image_encoder)
             else:
                 raise ValueError("Unsupported file type")
         
@@ -149,7 +150,7 @@ class FileAnalyser:
             elif mode == AnalyserMode.TEXT:
                 batch_embeddings = embedder.embed_batch([read_text_file(path) for path in file_batch])
             elif mode == AnalyserMode.VIDEO:
-                batch_embeddings = np.stack([self._embed_video(path) for path in file_batch], axis=0)
+                batch_embeddings = np.stack([embed_video(path, self.n_frames, self.image_encoder) for path in file_batch], axis=0)
 
             embeddings.append(batch_embeddings)
             pos += chunk_size
@@ -158,7 +159,17 @@ class FileAnalyser:
         prototype_embedding = generate_prototype_embedding(embeddings)
         return prototype_embedding
     
-    
+    @staticmethod
+    def save_embedding(filepath: str, embedding: np.ndarray):
+        """Saves embedding to a file."""
+        with open(filepath, 'wb') as f:
+            pickle.dump(embedding, f)
+
+    @staticmethod
+    def load_embedding(filepath: str) -> np.ndarray:
+        """Loads embedding from a file."""
+        with open(filepath, 'rb') as f:
+            return pickle.load(f)
 
     def _is_prototype_stale(self, path: str) -> bool:
         return get_days_since_last_modified(path) > self.refresh_prototype_duration
@@ -177,8 +188,4 @@ class FileAnalyser:
 
         return os.path.join(dirpath, f".{prefix}_prototype_embedding.pkl")
     
-    def _embed_video(self, path: str):
-        frame_arrs = get_frames_from_video(path, self.n_frames)
-        frame_images = [Image.fromarray(frame) for frame in frame_arrs]
-        batch = self.image_encoder.embed_batch(frame_images)
-        return generate_prototype_embedding(batch)
+ 
