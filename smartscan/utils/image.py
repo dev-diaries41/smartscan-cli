@@ -1,13 +1,6 @@
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-def generate_prototype_embedding(embeddings) -> np.ndarray:    
-    embeddings_tensor = np.stack(embeddings, axis=0)
-    prototype = np.mean(embeddings_tensor, axis=0)
-    prototype /= np.linalg.norm(prototype)
-    return prototype
-
-
 def nms_numpy(boxes, scores, iou_threshold):
     """Simple NMS in NumPy."""
     x1 = boxes[:, 0]
