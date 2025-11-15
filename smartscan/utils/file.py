@@ -84,7 +84,6 @@ def get_frames_from_video(video_path: str, n_frames: int):
     Extract `n` evenly spaced frames from a video using one FFmpeg process.
     Returns a list of frames as NumPy arrays (H, W, 3, dtype=uint8) at original resolution.
     """
-    # Probe video for original width, height, and duration
     cmd_probe = ["ffmpeg", "-i", video_path]
     proc = subprocess.Popen(cmd_probe, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     _, err = proc.communicate()
@@ -103,10 +102,6 @@ def get_frames_from_video(video_path: str, n_frames: int):
     hours, minutes, seconds = map(float, match_dur.groups())
     duration = hours*3600 + minutes*60 + seconds
 
-    # Calculate timestamps
-    timestamps = [duration * i / n_frames for i in range(n_frames)]
-
-    # FFmpeg command: extract frames evenly by setting fps
     cmd = [
         "ffmpeg",
         "-i", video_path,
