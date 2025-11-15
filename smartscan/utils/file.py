@@ -1,5 +1,4 @@
 import os
-import pickle
 import shutil
 import datetime
 import numpy as np
@@ -39,17 +38,6 @@ def move_file(file_path, target_dir):
     except Exception as e:
         print(f"Error moving file: {e}")
         return None
-
-
-def save_embedding(filepath: str, embedding: np.ndarray):
-    """Saves a tensor embedding to a file."""
-    with open(filepath, 'wb') as f:
-        pickle.dump(embedding, f)
-
-def load_embedding(filepath: str) -> np.ndarray:
-    """Loads a tensor embedding from a file."""
-    with open(filepath, 'rb') as f:
-        return pickle.load(f)
     
 
 def get_days_since_last_modified(file_path: str) -> int:
@@ -89,7 +77,6 @@ def get_files_from_dirs(dirs: list[str], dir_skip_patterns: list[str] = [], allo
             get_files(root_dir)
     
     return paths
-
 
 
 def get_frames_from_video(video_path: str, n_frames: int):
@@ -147,7 +134,7 @@ def get_frames_from_video(video_path: str, n_frames: int):
     return frames
 
 
-def list_embedding_provider() -> dict[str, str]:
+def list_embedding_providers() -> dict[str, str]:
     paths = get_files_from_dirs([EMBEDDING_PROVIDERS_DIR], allowed_exts=('.py'))
     filtered_paths = [p for p in paths if any(emb_type in p for emb_type in ('face', 'image', 'text'))]
     providers = {}
