@@ -1,12 +1,19 @@
 import os
 import numpy as np
 from typing import List
+from enum import IntEnum
+
 from smartscan.ml.providers.embeddings.embedding_provider import EmbeddingProvider
 from smartscan.utils.file import save_embedding, load_embedding, get_days_since_last_modified, get_files_from_dirs
 from smartscan.utils.ml_ops import generate_prototype_embedding
 
 
-class FileAnalyser():
+class AnalyserMode(IntEnum):
+    TEXT = 0
+    IMAGE = 1
+    VIDEO = 2
+
+class FileAnalyser:
     def __init__(self, 
                  image_encoder: EmbeddingProvider, 
                  text_encoder: EmbeddingProvider,
@@ -36,12 +43,12 @@ class FileAnalyser():
         return np.dot(embeddings[0], embeddings[1])
     
 
-    def compare_embedding_to_dir(self, embedding: np.ndarray, dirpath: str, embedder: EmbeddingProvider):
-        prototype_embedding_filepath = self._get_prototype_path(dirpath)
+    def compare_embedding_to_dir(self, embedding: np.ndarray, dirpath: str, embedder: EmbeddingProvider, mode: AnalyserMode):
+        prototype_embedding_filepath = self._get_prototype_path(dirpath, mode)
         if os.path.exists(prototype_embedding_filepath) and not self.is_prototype_stale(prototype_embedding_filepath):
             prototype_embedding = load_embedding(prototype_embedding_filepath)
         else:
-            prototype_embedding = self.generate_prototype_for_dir(dirpath, embedder)
+            prototype_embedding = self.generate_prototype_for_dir(dirpath, embedder, mode)
             save_embedding(prototype_embedding_filepath, prototype_embedding)
         return np.dot(embedding, prototype_embedding)
     
@@ -53,13 +60,17 @@ class FileAnalyser():
         is_image_mode = self.are_files_valid(self.valid_img_exts, [filepath])
         is_text_mode = self.are_files_valid(self.valid_txt_exts, [filepath])
 
-        embedder = self.image_encoder if is_image_mode else (self.text_encoder if is_text_mode else None)
-
-        if embedder is None:
+        if is_image_mode:
+            mode = AnalyserMode.IMAGE
+            embedder = self.image_encoder 
+        elif is_text_mode:
+            mode = AnalyserMode.TEXT
+            embedder = self.text_encoder
+        else:
             raise ValueError("Unsupported file type")
 
         file_embedding = embedder.embed(filepath)
-        return self.compare_embedding_to_dir(file_embedding, dirpath, embedder)
+        return self.compare_embedding_to_dir(file_embedding, dirpath, embedder, mode)
 
 
     def compare_file_to_dirs(self, filepath: str, dirpaths: List[str]) -> dict[str, float]:
@@ -73,16 +84,20 @@ class FileAnalyser():
             is_image_mode = self.are_files_valid(self.valid_img_exts, [filepath])
             is_text_mode = self.are_files_valid(self.valid_txt_exts, [filepath])
 
-            embedder = self.image_encoder if is_image_mode else (self.text_encoder if is_text_mode else None)
-
-            if embedder is None:
+            if is_image_mode:
+                mode = AnalyserMode.IMAGE
+                embedder = self.image_encoder 
+            elif is_text_mode:
+                mode = AnalyserMode.TEXT
+                embedder = self.text_encoder
+            else:
                 raise ValueError("Unsupported file type")
-    
+        
             file_embedding = embedder.embed(filepath)
 
             for dirpath in dirpaths:
                 try:
-                    similarity = self.compare_embedding_to_dir(file_embedding, dirpath, embedder)
+                    similarity = self.compare_embedding_to_dir(file_embedding, dirpath, embedder, mode)
                 except Exception as e:
                     print(f"[WARNING] Error comparing embeddings for directory {dirpath}: {e}")
                     continue
@@ -92,7 +107,7 @@ class FileAnalyser():
             return dirs_similarities
     
 
-    def generate_prototype_for_dir(self, dirpath, embedder: EmbeddingProvider):
+    def generate_prototype_for_dir(self, dirpath, embedder: EmbeddingProvider, mode: AnalyserMode):
         files = get_files_from_dirs([dirpath], limit=self.max_files_for_prototypes)
         pos = 0
         chunk_size = 4
@@ -114,5 +129,13 @@ class FileAnalyser():
     def are_files_valid(self, allowed_exts: list[str], files: list[str]) -> bool:
         return all(path.lower().endswith(allowed_exts) for path in files)
     
-    def _get_prototype_path(self, dirpath):
-        return os.path.join(dirpath, ".prototype_embedding.pkl")
+    def _get_prototype_path(self, dirpath, mode: AnalyserMode):
+        # This allows generating seperate prototypes for dirs which may have mutliple file types e.g Downloads
+        if mode == AnalyserMode.IMAGE:
+            prefix = "image"
+        elif mode == AnalyserMode.TEXT:
+            prefix = "text"
+        elif mode == AnalyserMode.VIDEO:
+            prefix = "video"
+
+        return os.path.join(dirpath, f".{prefix}_prototype_embedding.pkl")
