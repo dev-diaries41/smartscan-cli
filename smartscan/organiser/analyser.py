@@ -2,9 +2,10 @@ import os
 import numpy as np
 from typing import List
 from enum import IntEnum
+from PIL import Image
 
 from smartscan.ml.providers.embeddings.embedding_provider import EmbeddingProvider
-from smartscan.utils.file import save_embedding, load_embedding, get_days_since_last_modified, get_files_from_dirs
+from smartscan.utils.file import save_embedding, load_embedding, get_days_since_last_modified, get_files_from_dirs, read_text_file, get_frames_from_video
 from smartscan.utils.ml_ops import generate_prototype_embedding
 
 
@@ -20,36 +21,45 @@ class FileAnalyser:
                  similarity_threshold: float,
                  max_files_for_prototypes: int = 30,
                  refresh_prototype_duration: int  = 7,
+                 n_frames = 10
                  ):
         self.image_encoder = image_encoder
         self.text_encoder = text_encoder
         self.similarity_threshold = similarity_threshold
-        self.valid_img_exts = ('.png', '.jpg', '.jpeg', '.bmp', '.gif')
+        self.valid_img_exts = ('.png', '.jpg', '.jpeg', '.bmp', '.webp')
         self.valid_txt_exts = ('.txt', '.md', '.rst', '.html', '.json')
         self.valid_vid_exts = ('.mp4', '.mkv', '.webm')
         self.max_files_for_prototypes = max_files_for_prototypes
         self.refresh_prototype_duration = refresh_prototype_duration
+        self.n_frames = n_frames
+        
 
     def compare_files(self, filepath1: str, filepath2: str):
         """Compute the cosine similarity between two files"""
-        is_image_mode = self.are_files_valid(self.valid_img_exts, [filepath1, filepath2])
-        is_text_mode = self.are_files_valid(self.valid_txt_exts, [filepath1, filepath2])
+        is_image_mode = self._are_files_valid(self.valid_img_exts, [filepath1, filepath2])
+        is_text_mode = self._are_files_valid(self.valid_txt_exts, [filepath1, filepath2])
+        is_video_mode = self._are_files_valid(self.valid_vid_exts, [filepath1, filepath2])
 
-        embedder = self.image_encoder if is_image_mode else (self.text_encoder if is_text_mode else None)
+        if is_image_mode:
+            embedder = self.image_encoder 
+            embeddings = embedder.embed_batch([Image.open(path) for path in [filepath1, filepath2]])
+        elif is_text_mode:
+            embedder = self.text_encoder
+            embeddings = embedder.embed_batch([read_text_file(path) for path in [filepath1, filepath2]])
+        elif is_video_mode:
+            embeddings = np.stack([self._embed_video(path) for path in [filepath1, filepath2]], axis=0)
+        else:
+            raise ValueError("Unsupported file type: Both files must be of the same type")
 
-        if embedder is None:
-            raise ValueError("Unsupported file type: Both files must be of the same type e.g both image files or both text files")
-
-        embeddings = embedder.embed_batch([filepath1, filepath2])
         return np.dot(embeddings[0], embeddings[1])
     
 
     def compare_embedding_to_dir(self, embedding: np.ndarray, dirpath: str, embedder: EmbeddingProvider, mode: AnalyserMode):
         prototype_embedding_filepath = self._get_prototype_path(dirpath, mode)
-        if os.path.exists(prototype_embedding_filepath) and not self.is_prototype_stale(prototype_embedding_filepath):
+        if os.path.exists(prototype_embedding_filepath) and not self._is_prototype_stale(prototype_embedding_filepath):
             prototype_embedding = load_embedding(prototype_embedding_filepath)
         else:
-            prototype_embedding = self.generate_prototype_for_dir(dirpath, embedder, mode)
+            prototype_embedding = self._generate_prototype_for_dir(dirpath, embedder, mode)
             save_embedding(prototype_embedding_filepath, prototype_embedding)
         return np.dot(embedding, prototype_embedding)
     
@@ -58,19 +68,25 @@ class FileAnalyser:
         """
         Compute the cosine similarity between a file and a directory.
         """
-        is_image_mode = self.are_files_valid(self.valid_img_exts, [filepath])
-        is_text_mode = self.are_files_valid(self.valid_txt_exts, [filepath])
+        is_image_mode = self._are_files_valid(self.valid_img_exts, [filepath])
+        is_text_mode = self._are_files_valid(self.valid_txt_exts, [filepath])
+        is_video_mode = self._are_files_valid(self.valid_vid_exts, [filepath])
 
         if is_image_mode:
             mode = AnalyserMode.IMAGE
             embedder = self.image_encoder 
+            file_embedding = embedder.embed(Image.open(filepath))
         elif is_text_mode:
             mode = AnalyserMode.TEXT
             embedder = self.text_encoder
+            file_embedding = embedder.embed(read_text_file(filepath))
+        elif is_video_mode:
+            mode = AnalyserMode.VIDEO
+            embedder = self.image_encoder
+            file_embedding = self._embed_video(filepath)
         else:
             raise ValueError("Unsupported file type")
-
-        file_embedding = embedder.embed(filepath)
+        
         return self.compare_embedding_to_dir(file_embedding, dirpath, embedder, mode)
 
 
@@ -82,19 +98,25 @@ class FileAnalyser:
 
             dirs_similarities: dict[str, float] = {}
 
-            is_image_mode = self.are_files_valid(self.valid_img_exts, [filepath])
-            is_text_mode = self.are_files_valid(self.valid_txt_exts, [filepath])
+            is_image_mode = self._are_files_valid(self.valid_img_exts, [filepath])
+            is_text_mode = self._are_files_valid(self.valid_txt_exts, [filepath])
+            is_video_mode = self._are_files_valid(self.valid_vid_exts, [filepath])
 
             if is_image_mode:
                 mode = AnalyserMode.IMAGE
                 embedder = self.image_encoder 
+                file_embedding = embedder.embed(Image.open(filepath))
             elif is_text_mode:
                 mode = AnalyserMode.TEXT
                 embedder = self.text_encoder
+                file_embedding = embedder.embed(read_text_file(filepath))
+            elif is_video_mode:
+                mode = AnalyserMode.VIDEO
+                embedder = self.image_encoder
+                file_embedding = self._embed_video(filepath)
             else:
                 raise ValueError("Unsupported file type")
         
-            file_embedding = embedder.embed(filepath)
 
             for dirpath in dirpaths:
                 try:
@@ -108,7 +130,7 @@ class FileAnalyser:
             return dirs_similarities
     
 
-    def generate_prototype_for_dir(self, dirpath, embedder: EmbeddingProvider, mode: AnalyserMode):
+    def _generate_prototype_for_dir(self, dirpath, embedder: EmbeddingProvider, mode: AnalyserMode):
         if mode == AnalyserMode.IMAGE:
             allowed_exts = self.valid_img_exts
         elif mode == AnalyserMode.TEXT:
@@ -122,7 +144,13 @@ class FileAnalyser:
         embeddings = []
         while(pos < len(files)):
             file_batch = files[pos : (pos + chunk_size)]
-            batch_embeddings = embedder.embed_batch(file_batch)
+            if mode == AnalyserMode.IMAGE:
+                batch_embeddings = embedder.embed_batch([Image.open(path) for path in file_batch])
+            elif mode == AnalyserMode.TEXT:
+                batch_embeddings = embedder.embed_batch([read_text_file(path) for path in file_batch])
+            elif mode == AnalyserMode.VIDEO:
+                batch_embeddings = np.stack([self._embed_video(path) for path in file_batch], axis=0)
+
             embeddings.append(batch_embeddings)
             pos += chunk_size
         
@@ -130,11 +158,12 @@ class FileAnalyser:
         prototype_embedding = generate_prototype_embedding(embeddings)
         return prototype_embedding
     
+    
 
-    def is_prototype_stale(self, path: str) -> bool:
+    def _is_prototype_stale(self, path: str) -> bool:
         return get_days_since_last_modified(path) > self.refresh_prototype_duration
     
-    def are_files_valid(self, allowed_exts: list[str], files: list[str]) -> bool:
+    def _are_files_valid(self, allowed_exts: list[str], files: list[str]) -> bool:
         return all(path.lower().endswith(allowed_exts) for path in files)
     
     def _get_prototype_path(self, dirpath, mode: AnalyserMode):
@@ -147,3 +176,9 @@ class FileAnalyser:
             prefix = "video"
 
         return os.path.join(dirpath, f".{prefix}_prototype_embedding.pkl")
+    
+    def _embed_video(self, path: str):
+        frame_arrs = get_frames_from_video(path, self.n_frames)
+        frame_images = [Image.fromarray(frame) for frame in frame_arrs]
+        batch = self.image_encoder.embed_batch(frame_images)
+        return generate_prototype_embedding(batch)

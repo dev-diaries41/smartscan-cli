@@ -3,22 +3,22 @@
 import os
 import argparse
 from smartscan.utils.file import load_dir_list, get_files_from_dirs
-from smartscan.constants import TEXT_ENCODER_PATH, IMAGE_ENCODER_PATH, MINILM_MODEL_PATH
+from smartscan.constants import  DINO_V2_SMALL_MODEL_PATH, MINILM_MODEL_PATH
 from smartscan.organiser.analyser import FileAnalyser
 from smartscan.organiser.scanner import FileScanner
-from smartscan.ml.providers.embeddings.clip.image import ClipImageEmbedder
 from smartscan.ml.providers.embeddings.minilm.text import MiniLmTextEmbedder
+from smartscan.ml.providers.embeddings.dino.image import DinoSmallV2ImageEmbedder
 
 
 def main():
     if not os.path.exists(MINILM_MODEL_PATH):
         raise ValueError(f"Text encoder model not found: {MINILM_MODEL_PATH} ")
 
-    if not os.path.exists(IMAGE_ENCODER_PATH):
-        raise ValueError(f"Image encoder model not found: {IMAGE_ENCODER_PATH}")
+    if not os.path.exists(DINO_V2_SMALL_MODEL_PATH):
+        raise ValueError(f"Image encoder model not found: {DINO_V2_SMALL_MODEL_PATH}")
 
     file_analyser = FileAnalyser(
-        image_encoder=ClipImageEmbedder(IMAGE_ENCODER_PATH),
+        image_encoder=DinoSmallV2ImageEmbedder(DINO_V2_SMALL_MODEL_PATH),
         text_encoder=MiniLmTextEmbedder(MINILM_MODEL_PATH),
         similarity_threshold=0.4
     )
