@@ -56,7 +56,7 @@ def get_days_since_last_modified(file_path: str) -> int:
     return days_since_modified 
 
 
-def get_files_from_dirs(dirs: list[str], skip_patterns: list[str] = [], limit: int | None = None):
+def get_files_from_dirs(dirs: list[str], skip_patterns: list[str] = [], limit: int | None = None) -> list[str]:
     if not isinstance(dirs, list):
         raise ValueError("Invalid list of directories")
     
@@ -71,7 +71,7 @@ def get_files_from_dirs(dirs: list[str], skip_patterns: list[str] = [], limit: i
                 if entry.is_file():
                     if limit is not None and len(paths) >= limit:
                         return
-                    paths.append(entry)
+                    paths.append(str(entry.resolve()))
                 elif entry.is_dir():
                     get_files(entry)
         except PermissionError:
