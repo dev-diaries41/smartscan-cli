@@ -1,17 +1,20 @@
 from abc import abstractmethod, ABC
-from typing import Any
+from typing import TypeVar, Generic
+from PIL import Image
 import numpy as np
 
-class EmbeddingProvider(ABC):
+T = TypeVar("T")
+
+class EmbeddingProvider(ABC, Generic[T]):
     @property
     @abstractmethod
     def embedding_dim(self) -> int:
         pass
     @abstractmethod
-    def embed(self, data: Any) -> np.ndarray:
+    def embed(self, data: T) -> np.ndarray:
         pass
     @abstractmethod
-    def embed_batch(self, data: list[Any]) -> np.ndarray:
+    def embed_batch(self, data: list[T]) -> np.ndarray:
         pass
 
     @abstractmethod
@@ -25,3 +28,6 @@ class EmbeddingProvider(ABC):
     @abstractmethod
     def close_session(self):
         pass
+
+ImageEmbedderProvider = EmbeddingProvider[Image.Image]
+TextEmbedderProvider = EmbeddingProvider[str]
