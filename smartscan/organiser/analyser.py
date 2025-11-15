@@ -6,8 +6,8 @@ from enum import IntEnum
 from PIL import Image
 
 from smartscan.ml.providers.embeddings.embedding_provider import EmbeddingProvider
-from smartscan.utils.file import get_days_since_last_modified, get_files_from_dirs, read_text_file, get_frames_from_video
-from smartscan.utils.embeddings import generate_prototype_embedding
+from smartscan.utils.file import get_days_since_last_modified, get_files_from_dirs, read_text_file
+from smartscan.utils.embeddings import generate_prototype_embedding, embed_video
 
 
 class AnalyserMode(IntEnum):
@@ -48,7 +48,7 @@ class FileAnalyser:
             embedder = self.text_encoder
             embeddings = embedder.embed_batch([read_text_file(path) for path in [filepath1, filepath2]])
         elif is_video_mode:
-            embeddings = np.stack([self._embed_video(path) for path in [filepath1, filepath2]], axis=0)
+            embeddings = np.stack([self.embed_video(path) for path in [filepath1, filepath2]], axis=0)
         else:
             raise ValueError("Unsupported file type: Both files must be of the same type")
 
@@ -84,7 +84,7 @@ class FileAnalyser:
         elif is_video_mode:
             mode = AnalyserMode.VIDEO
             embedder = self.image_encoder
-            file_embedding = self._embed_video(filepath)
+            file_embedding = self.embed_video(filepath)
         else:
             raise ValueError("Unsupported file type")
         
@@ -114,7 +114,7 @@ class FileAnalyser:
             elif is_video_mode:
                 mode = AnalyserMode.VIDEO
                 embedder = self.image_encoder
-                file_embedding = self._embed_video(filepath)
+                file_embedding = self.embed_video(filepath)
             else:
                 raise ValueError("Unsupported file type")
         
@@ -150,7 +150,7 @@ class FileAnalyser:
             elif mode == AnalyserMode.TEXT:
                 batch_embeddings = embedder.embed_batch([read_text_file(path) for path in file_batch])
             elif mode == AnalyserMode.VIDEO:
-                batch_embeddings = np.stack([self._embed_video(path) for path in file_batch], axis=0)
+                batch_embeddings = np.stack([self.embed_video(path) for path in file_batch], axis=0)
 
             embeddings.append(batch_embeddings)
             pos += chunk_size
