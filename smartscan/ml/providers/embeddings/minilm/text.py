@@ -1,10 +1,8 @@
 import os
 import numpy as np
-from pathlib import Path
 from smartscan.ml.providers.embeddings.embedding_provider import EmbeddingProvider
 from smartscan.ml.models.onnx_model import OnnxModel
 from smartscan.ml.providers.embeddings.minilm.tokenizer import load_minilm_tokenizer
-from smartscan.utils.file import read_text_file
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -21,14 +19,14 @@ class MiniLmTextEmbedder(EmbeddingProvider):
     def embedding_dim(self) -> int:
         return self._embedding_dim
 
-    def embed(self, data: str | Path):
+    def embed(self, data: str):
         """Create vector embeddings for text using an ONNX model."""
 
-        assert self._model.is_load(), "Model not loaded"
+        if not self._model.is_load(): 
+            raise ValueError("Model not loaded")
         
-        text = read_text_file(data) if isinstance(data, Path) else data
         input_name = self._model.get_inputs()[0].name
-        token_ids = self._tokenize(text)
+        token_ids = self._tokenize(data)
         attention_mask = [1 if id != 0 else 0 for id in token_ids]
         token_input = np.array([token_ids], dtype=np.int64)
         mask_input = np.array([attention_mask], dtype=np.int64)
@@ -40,13 +38,14 @@ class MiniLmTextEmbedder(EmbeddingProvider):
         return embedding
     
 
-    def embed_batch(self, data: list[str] | list[Path]):
+    def embed_batch(self, data: list[str]):
         """Create vector embeddings for batch of text files using an ONNX model."""
 
-        assert self._model.is_load(), "Model not loaded"
+        if not self._model.is_load(): 
+            raise ValueError("Model not loaded")
         
         input_names = self._model.get_inputs()
-        token_ids_batch = [self._tokenize(read_text_file(item) if isinstance(item, Path) else item) for item in data]
+        token_ids_batch = [self._tokenize(item) for item in data]
         attention_mask_batch = [[1 if id != 0 else 0 for id in token_ids] for token_ids in token_ids_batch]
 
         token_inputs = np.array(token_ids_batch, dtype=np.int64)
