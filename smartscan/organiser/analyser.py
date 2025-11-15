@@ -26,6 +26,7 @@ class FileAnalyser:
         self.similarity_threshold = similarity_threshold
         self.valid_img_exts = ('.png', '.jpg', '.jpeg', '.bmp', '.gif')
         self.valid_txt_exts = ('.txt', '.md', '.rst', '.html', '.json')
+        self.valid_vid_exts = ('.mp4', '.mkv', '.webm')
         self.max_files_for_prototypes = max_files_for_prototypes
         self.refresh_prototype_duration = refresh_prototype_duration
 
