@@ -2,7 +2,7 @@ import os
 import numpy as np
 from typing import List
 from smartscan.ml.providers.embeddings.embedding_provider import EmbeddingProvider
-from smartscan.utils.file import save_embedding, load_embedding, get_days_since_last_modified
+from smartscan.utils.file import save_embedding, load_embedding, get_days_since_last_modified, get_files_from_dirs
 from smartscan.utils.ml_ops import generate_prototype_embedding
 
 
@@ -37,7 +37,7 @@ class FileAnalyser():
     
 
     def compare_embedding_to_dir(self, embedding: np.ndarray, dirpath: str, embedder: EmbeddingProvider):
-        prototype_embedding_filepath = self.get_prototype_path(dirpath)
+        prototype_embedding_filepath = self._get_prototype_path(dirpath)
         if os.path.exists(prototype_embedding_filepath) and not self.is_prototype_stale(prototype_embedding_filepath):
             prototype_embedding = load_embedding(prototype_embedding_filepath)
         else:
@@ -93,7 +93,7 @@ class FileAnalyser():
     
 
     def generate_prototype_for_dir(self, dirpath, embedder: EmbeddingProvider):
-        files = [os.path.join(dirpath, f) for f in os.listdir()[:self.max_files_for_prototypes]]
+        files = get_files_from_dirs([dirpath], limit=self.max_files_for_prototypes)
         pos = 0
         chunk_size = 4
         embeddings = []
