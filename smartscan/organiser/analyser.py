@@ -30,7 +30,7 @@ class FileAnalyser():
         embedder = self.image_encoder if is_image_mode else (self.text_encoder if is_text_mode else None)
 
         if embedder is None:
-            raise ValueError("Both files must be of the same type e.g both image files or both text files")
+            raise ValueError("Unsupported file type: Both files must be of the same type e.g both image files or both text files")
 
         embeddings = embedder.embed_batch([filepath1, filepath2])
         return np.dot(embeddings[0], embeddings[1])
