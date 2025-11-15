@@ -56,7 +56,7 @@ def get_days_since_last_modified(file_path: str) -> int:
     return days_since_modified 
 
 
-def get_files_from_dirs(dirs: list[str], skip_patterns: list[str] = [], limit: int | None = None) -> list[str]:
+def get_files_from_dirs(dirs: list[str], dir_skip_patterns: list[str] = [], allowed_exts: tuple[str] | None  = None, limit: int | None = None) -> list[str]:
     if not isinstance(dirs, list):
         raise ValueError("Invalid list of directories")
     
@@ -66,9 +66,11 @@ def get_files_from_dirs(dirs: list[str], skip_patterns: list[str] = [], limit: i
         nonlocal paths
         try:
             for entry in base.iterdir():
-                if entry.is_dir() and any(entry.match(pat) for pat in skip_patterns):
+                if entry.is_dir() and any(entry.match(pat) for pat in dir_skip_patterns):
                     continue
                 if entry.is_file():
+                    if allowed_exts is not None and not entry.name.endswith(allowed_exts):
+                        continue
                     if limit is not None and len(paths) >= limit:
                         return
                     paths.append(str(entry.resolve()))
@@ -76,7 +78,6 @@ def get_files_from_dirs(dirs: list[str], skip_patterns: list[str] = [], limit: i
                     get_files(entry)
         except PermissionError:
             print(f"[Skipped] Permission denied: {base}")
-            return
 
     for d in dirs:
         root_dir = Path(d)
