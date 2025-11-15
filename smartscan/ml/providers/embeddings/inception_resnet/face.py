@@ -1,11 +1,11 @@
 import numpy as np
 import io
 from PIL import Image
-from smartscan.ml.providers.embeddings.embedding_provider import EmbeddingProvider
+from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider
 from smartscan.ml.models.onnx_model import OnnxModel
 
 
-class InceptionResnetFaceEmbedder(EmbeddingProvider):
+class InceptionResnetFaceEmbedder(ImageEmbeddingProvider):
     def __init__(self, model_path: str):
         self._model = OnnxModel(model_path)
 
