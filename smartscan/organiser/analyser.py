@@ -109,7 +109,14 @@ class FileAnalyser:
     
 
     def generate_prototype_for_dir(self, dirpath, embedder: EmbeddingProvider, mode: AnalyserMode):
-        files = get_files_from_dirs([dirpath], limit=self.max_files_for_prototypes)
+        if mode == AnalyserMode.IMAGE:
+            allowed_exts = self.valid_img_exts
+        elif mode == AnalyserMode.TEXT:
+            allowed_exts = self.valid_txt_exts
+        elif mode == AnalyserMode.VIDEO:
+            allowed_exts = self.valid_vid_exts
+
+        files = get_files_from_dirs([dirpath], dir_skip_patterns=["**/.*"], limit=self.max_files_for_prototypes, allowed_exts=allowed_exts)
         pos = 0
         chunk_size = 4
         embeddings = []
