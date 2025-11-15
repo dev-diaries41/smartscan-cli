@@ -3,6 +3,7 @@ import pickle
 import shutil
 import datetime
 import numpy as np
+from pathlib import Path
 
 def read_text_file(filepath: str):
    assert os.path.isfile(filepath), "Invalid file"
@@ -13,10 +14,7 @@ def read_text_file(filepath: str):
 def load_dir_list(dirlist_file):
     """Read the list of directory paths from the provided text file."""
     with open(dirlist_file, "r") as f:
-        dirs = [line.strip() for line in f if line.strip()]
-    for d in dirs:
-        if not os.path.isdir(d):
-            print(f"Warning: '{d}' is not a valid directory.")
+        dirs = [line.strip() for line in f if line.strip() and os.path.isdir(line.strip())]
     return dirs
 
 
@@ -57,11 +55,32 @@ def get_days_since_last_modified(file_path: str) -> int:
     days_since_modified = (current_date - last_modified_date).days
     return days_since_modified 
 
-def get_files_from_dirs(dirs: list[str]):
+
+def get_files_from_dirs(dirs: list[str], skip_patterns: list[str] = [], limit: int | None = None):
+    if not isinstance(dirs, list):
+        raise ValueError("Invalid list of directories")
+    
     paths = []
 
+    def get_files(base: Path):
+        nonlocal paths
+        try:
+            for entry in base.iterdir():
+                if entry.is_dir() and any(entry.match(pat) for pat in skip_patterns):
+                    continue
+                if entry.is_file():
+                    if limit is not None and len(paths) >= limit:
+                        return
+                    paths.append(entry)
+                elif entry.is_dir():
+                    get_files(entry)
+        except PermissionError:
+            print(f"[Skipped] Permission denied: {base}")
+            return
+
     for d in dirs:
-        if os.path.isdir(d):
-            for filename in os.listdir(d):
-                paths.append(os.path.join(d, filename))
+        root_dir = Path(d)
+        if root_dir.is_dir():
+            get_files(root_dir)
+    
     return paths
