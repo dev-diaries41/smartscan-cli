@@ -24,8 +24,8 @@ class FileAnalyser():
 
     def compare_files(self, filepath1: str, filepath2: str):
         """Compute the cosine similarity between two files"""
-        is_image_mode = all(path.lower().endswith(self.valid_img_exts) for path in [filepath1, filepath2])
-        is_text_mode = all(path.lower().endswith(self.valid_txt_exts) for path in [filepath1, filepath2])
+        is_image_mode = self.are_files_valid(self.valid_img_exts, [filepath1, filepath2])
+        is_text_mode = self.are_files_valid(self.valid_txt_exts, [filepath1, filepath2])
 
         embedder = self.image_encoder if is_image_mode else (self.text_encoder if is_text_mode else None)
 
@@ -37,7 +37,7 @@ class FileAnalyser():
     
 
     def compare_embedding_to_dir(self, embedding: np.ndarray, dirpath: str, embedder: EmbeddingProvider):
-        prototype_embedding_filepath = os.path.join(dirpath, "prototype_embedding.pkl")
+        prototype_embedding_filepath = self.get_prototype_path(dirpath)
         if os.path.exists(prototype_embedding_filepath) and not self.is_prototype_stale(prototype_embedding_filepath):
             prototype_embedding = load_embedding(prototype_embedding_filepath)
         else:
@@ -50,8 +50,8 @@ class FileAnalyser():
         """
         Compute the cosine similarity between a file and a directory.
         """
-        is_image_mode = all(path.lower().endswith(self.valid_img_exts) for path in [filepath])
-        is_text_mode = all(path.lower().endswith(self.valid_txt_exts) for path in [filepath])
+        is_image_mode = self.are_files_valid(self.valid_img_exts, [filepath])
+        is_text_mode = self.are_files_valid(self.valid_txt_exts, [filepath])
 
         embedder = self.image_encoder if is_image_mode else (self.text_encoder if is_text_mode else None)
 
@@ -70,8 +70,8 @@ class FileAnalyser():
 
             dirs_similarities: dict[str, float] = {}
 
-            is_image_mode = all(path.lower().endswith(self.valid_img_exts) for path in [filepath])
-            is_text_mode = all(path.lower().endswith(self.valid_txt_exts) for path in [filepath])
+            is_image_mode = self.are_files_valid(self.valid_img_exts, [filepath])
+            is_text_mode = self.are_files_valid(self.valid_txt_exts, [filepath])
 
             embedder = self.image_encoder if is_image_mode else (self.text_encoder if is_text_mode else None)
 
@@ -110,3 +110,9 @@ class FileAnalyser():
 
     def is_prototype_stale(self, path: str) -> bool:
         return get_days_since_last_modified(path) > self.refresh_prototype_duration
+    
+    def are_files_valid(self, allowed_exts: list[str], files: list[str]) -> bool:
+        return all(path.lower().endswith(allowed_exts) for path in files)
+    
+    def _get_prototype_path(self, dirpath):
+        return os.path.join(dirpath, ".prototype_embedding.pkl")
