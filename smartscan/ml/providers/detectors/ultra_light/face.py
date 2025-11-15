@@ -1,8 +1,10 @@
-from ml.models.providers.detectors.detector_provider import DetectorProvider
-from PIL import Image
-from ml.models.onnx_model import OnnxModel
 import numpy as np
 import io
+from PIL import Image
+
+from smartscan.ml.providers.detectors.detector_provider import DetectorProvider
+from smartscan.ml.models.onnx_model import OnnxModel
+
 
 
 class UltraLightFaceDetector(DetectorProvider):
@@ -10,14 +12,14 @@ class UltraLightFaceDetector(DetectorProvider):
         self._model = OnnxModel(model_path)
 
 
-    def detect(self, data: str | bytes):
+    def detect(self, data: Image.Image):
         """Detect faces in a image."""
 
-        assert self._model.is_load(), "Model not loaded"
-        
-        image = io.BytesIO(data) if isinstance(data, bytes) else data
+        if not self._model.is_load(): 
+            raise ValueError("Model not loaded")
+                
         input_name = self._model.get_inputs()[0].name
-        image_input = self._preprocess(Image.open(image))
+        image_input = self._preprocess(data)
         outputs = self._model.run({input_name: image_input})
         scores = outputs[0][0]
         boxes = outputs[1][0]
