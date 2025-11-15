@@ -36,9 +36,9 @@ class FileAnalyser:
 
     def compare_files(self, filepath1: str, filepath2: str):
         """Compute the cosine similarity between two files"""
-        is_image_mode = self.are_files_valid(self.valid_img_exts, [filepath1, filepath2])
-        is_text_mode = self.are_files_valid(self.valid_txt_exts, [filepath1, filepath2])
-        is_video_mode = self.are_files_valid(self.valid_vid_exts, [filepath1, filepath2])
+        is_image_mode = self._are_files_valid(self.valid_img_exts, [filepath1, filepath2])
+        is_text_mode = self._are_files_valid(self.valid_txt_exts, [filepath1, filepath2])
+        is_video_mode = self._are_files_valid(self.valid_vid_exts, [filepath1, filepath2])
 
         if is_image_mode:
             embedder = self.image_encoder 
@@ -56,10 +56,10 @@ class FileAnalyser:
 
     def compare_embedding_to_dir(self, embedding: np.ndarray, dirpath: str, embedder: EmbeddingProvider, mode: AnalyserMode):
         prototype_embedding_filepath = self._get_prototype_path(dirpath, mode)
-        if os.path.exists(prototype_embedding_filepath) and not self.is_prototype_stale(prototype_embedding_filepath):
+        if os.path.exists(prototype_embedding_filepath) and not self._is_prototype_stale(prototype_embedding_filepath):
             prototype_embedding = load_embedding(prototype_embedding_filepath)
         else:
-            prototype_embedding = self.generate_prototype_for_dir(dirpath, embedder, mode)
+            prototype_embedding = self._generate_prototype_for_dir(dirpath, embedder, mode)
             save_embedding(prototype_embedding_filepath, prototype_embedding)
         return np.dot(embedding, prototype_embedding)
     
@@ -68,9 +68,9 @@ class FileAnalyser:
         """
         Compute the cosine similarity between a file and a directory.
         """
-        is_image_mode = self.are_files_valid(self.valid_img_exts, [filepath])
-        is_text_mode = self.are_files_valid(self.valid_txt_exts, [filepath])
-        is_video_mode = self.are_files_valid(self.valid_vid_exts, [filepath])
+        is_image_mode = self._are_files_valid(self.valid_img_exts, [filepath])
+        is_text_mode = self._are_files_valid(self.valid_txt_exts, [filepath])
+        is_video_mode = self._are_files_valid(self.valid_vid_exts, [filepath])
 
         if is_image_mode:
             mode = AnalyserMode.IMAGE
@@ -98,9 +98,9 @@ class FileAnalyser:
 
             dirs_similarities: dict[str, float] = {}
 
-            is_image_mode = self.are_files_valid(self.valid_img_exts, [filepath])
-            is_text_mode = self.are_files_valid(self.valid_txt_exts, [filepath])
-            is_video_mode = self.are_files_valid(self.valid_vid_exts, [filepath])
+            is_image_mode = self._are_files_valid(self.valid_img_exts, [filepath])
+            is_text_mode = self._are_files_valid(self.valid_txt_exts, [filepath])
+            is_video_mode = self._are_files_valid(self.valid_vid_exts, [filepath])
 
             if is_image_mode:
                 mode = AnalyserMode.IMAGE
@@ -130,7 +130,7 @@ class FileAnalyser:
             return dirs_similarities
     
 
-    def generate_prototype_for_dir(self, dirpath, embedder: EmbeddingProvider, mode: AnalyserMode):
+    def _generate_prototype_for_dir(self, dirpath, embedder: EmbeddingProvider, mode: AnalyserMode):
         if mode == AnalyserMode.IMAGE:
             allowed_exts = self.valid_img_exts
         elif mode == AnalyserMode.TEXT:
@@ -160,10 +160,10 @@ class FileAnalyser:
     
     
 
-    def is_prototype_stale(self, path: str) -> bool:
+    def _is_prototype_stale(self, path: str) -> bool:
         return get_days_since_last_modified(path) > self.refresh_prototype_duration
     
-    def are_files_valid(self, allowed_exts: list[str], files: list[str]) -> bool:
+    def _are_files_valid(self, allowed_exts: list[str], files: list[str]) -> bool:
         return all(path.lower().endswith(allowed_exts) for path in files)
     
     def _get_prototype_path(self, dirpath, mode: AnalyserMode):
