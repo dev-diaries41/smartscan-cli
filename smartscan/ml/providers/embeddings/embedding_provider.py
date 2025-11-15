@@ -29,5 +29,5 @@ class EmbeddingProvider(ABC, Generic[T]):
     def close_session(self):
         pass
 
-ImageEmbedderProvider = EmbeddingProvider[Image.Image]
-TextEmbedderProvider = EmbeddingProvider[str]
+ImageEmbeddingProvider = EmbeddingProvider[Image.Image]
+TextEmbeddingProvider = EmbeddingProvider[str]

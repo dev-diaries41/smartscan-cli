@@ -5,7 +5,7 @@ from typing import List
 from enum import IntEnum
 from PIL import Image
 
-from smartscan.ml.providers.embeddings.embedding_provider import EmbeddingProvider
+from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider, EmbeddingProvider
 from smartscan.utils.file import get_days_since_last_modified, get_files_from_dirs, read_text_file
 from smartscan.utils.embeddings import generate_prototype_embedding, embed_video
 
@@ -17,8 +17,8 @@ class AnalyserMode(IntEnum):
 
 class FileAnalyser:
     def __init__(self, 
-                 image_encoder: EmbeddingProvider, 
-                 text_encoder: EmbeddingProvider,
+                 image_encoder: ImageEmbeddingProvider, 
+                 text_encoder: TextEmbeddingProvider,
                  similarity_threshold: float,
                  max_files_for_prototypes: int = 30,
                  refresh_prototype_duration: int  = 7,
