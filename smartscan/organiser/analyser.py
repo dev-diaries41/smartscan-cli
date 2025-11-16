@@ -201,7 +201,7 @@ class FileAnalyser:
             else:
                 embeddings = embedder.embed_batch([read_text_file(path) for path in files])
         elif mode == AnalyserMode.VIDEO:
-            result = self.text_store.get(ids=files, include=['embeddings']) 
+            result = self.video_store.get(ids=files, include=['embeddings']) 
             if len(result['embeddings']) == len(files):
                 embeddings = result['embeddings']
             else:
