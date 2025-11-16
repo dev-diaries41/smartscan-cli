@@ -1,6 +1,6 @@
 import sqlite3
 from datetime import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 
 @dataclass
@@ -8,7 +8,7 @@ class ScanHistory:
     scan_id: str
     source_file: str
     destination_file: str
-    timestamp: str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    timestamp: str = field(default_factory=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
     def as_tuple(self):
         return (self.scan_id, self.source_file, self.destination_file, self.timestamp)
@@ -28,12 +28,12 @@ class ScanHistoryDB:
         scan_id TEXT,
         source_file TEXT,
         destination_file TEXT,
-        timestamp TEXT
+        timestamp TEXT,
         PRIMARY KEY (scan_id, source_file, destination_file)
         )
         """
 
-        connection = self._connect_db(self.path)
+        connection = self._connect_db()
         connection.execute(schema)
         connection.commit()
         connection.close()
