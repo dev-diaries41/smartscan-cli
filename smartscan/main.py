@@ -3,8 +3,9 @@
 import os
 import argparse
 import asyncio
+import chromadb
 from smartscan.utils.file import load_dir_list, get_files_from_dirs
-from smartscan.constants import  DINO_V2_SMALL_MODEL_PATH, MINILM_MODEL_PATH, SCAN_HISTORY_DB
+from smartscan.constants import  DINO_V2_SMALL_MODEL_PATH, MINILM_MODEL_PATH, SCAN_HISTORY_DB, DB_DIR
 from smartscan.organiser.analyser import FileAnalyser
 from smartscan.organiser.scanner import FileScanner
 from smartscan.organiser.scanner_listener import FileScannerListener
@@ -19,10 +20,28 @@ async def main():
     if not os.path.exists(DINO_V2_SMALL_MODEL_PATH):
         raise ValueError(f"Image encoder model not found: {DINO_V2_SMALL_MODEL_PATH}")
 
+
+    client = chromadb.PersistentClient(path=DB_DIR)
+    text_store = client.get_or_create_collection(
+        name="text_collection",
+        metadata={"description": "Collection for text documents"}
+    )
+    image_store = client.get_or_create_collection(
+        name="image_collection",
+        metadata={"description": "Collection for images"}
+    ) 
+    video_store = client.get_or_create_collection(
+        name="test_video_collection",
+        metadata={"description": "Collection for videos"}
+    )
+
     file_analyser = FileAnalyser(
         image_encoder=DinoSmallV2ImageEmbedder(DINO_V2_SMALL_MODEL_PATH),
         text_encoder=MiniLmTextEmbedder(MINILM_MODEL_PATH),
-        similarity_threshold=0.4
+        similarity_threshold=0.4,
+        image_store=image_store,
+        text_store=text_store,
+        video_store=video_store,
     )
 
     file_analyser.image_encoder.init()
