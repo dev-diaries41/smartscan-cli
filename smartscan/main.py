@@ -11,7 +11,8 @@ from smartscan.organiser.scanner import FileScanner
 from smartscan.organiser.scanner_listener import FileScannerListener
 from smartscan.ml.providers.embeddings.minilm.text import MiniLmTextEmbedder
 from smartscan.ml.providers.embeddings.dino.image import DinoSmallV2ImageEmbedder
-
+from smartscan.indexer.indexer import FileIndexer
+from smartscan.indexer.indexer_listener import FileIndexerListener
 
 async def main():
     if not os.path.exists(MINILM_MODEL_PATH):
@@ -90,6 +91,26 @@ async def main():
         help="Similarity threshold for the scan mode. Default is 0.4."
     )
 
+    index_parser = subparsers.add_parser("index", help="Index files from selected directories.")
+    index_parser.add_argument(
+        "--n_frames",
+        type=int,
+        default=10,
+        help="The number of frames to use when creating embedding for video. Default is 10"
+    )
+    index_group = index_parser.add_mutually_exclusive_group(required=True)
+    index_group.add_argument(
+        "dirlist_file",
+        nargs='?',
+        metavar="DIRLISTFILE",
+        help="File listing target directories."
+    )
+    index_group.add_argument(
+        "--dirs",
+        nargs='+',
+        metavar="DIRLIST",
+        help="List of directories to index."
+    )
     args = parser.parse_args()
 
     if args.command == "compare":
@@ -128,6 +149,31 @@ async def main():
         allowed_exts = file_analyser.valid_img_exts + file_analyser.valid_txt_exts + file_analyser.valid_vid_exts
         result = await file_scanner.run(get_files_from_dirs(target_dirs, allowed_exts=allowed_exts))
         print(f"Scan results - files moved: {result.total_processed} | time elpased: {result.time_elapsed:.2f}s")
+    
+    elif args.command == "index":
+        indexer = FileIndexer(
+            image_encoder=DinoSmallV2ImageEmbedder(DINO_V2_SMALL_MODEL_PATH),
+            text_encoder=MiniLmTextEmbedder(MINILM_MODEL_PATH),
+            image_store=image_store,
+            text_store=text_store,
+            video_store=video_store,
+            listener = FileIndexerListener()
+        )
+
+        if args.dirlist_file:
+            if not os.path.isfile(args.dirlist_file):
+                raise argparse.ArgumentTypeError(f"Invalid file: {dirlist_file}")
+            
+            dirpaths = load_dir_list(args.dirlist_file)
+        elif args.dirs:
+            dirpaths = args.dirs
+        allowed_exts = indexer.valid_img_exts + indexer.valid_txt_exts + indexer.valid_vid_exts
+        files = get_files_from_dirs(dirpaths, allowed_exts=indexer.valid_txt_exts)
+
+        indexer.image_encoder.init()
+        indexer.text_encoder.init()
+        _ = await indexer.run(files)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
