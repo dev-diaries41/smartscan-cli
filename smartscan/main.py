@@ -97,7 +97,7 @@ async def main():
             filepath1, filepath2 = args.file
             if not os.path.isfile(filepath1) or not os.path.isfile(filepath2):
                 raise argparse.ArgumentTypeError(f"One or both files not found: {filepath1}, {filepath2}")
-            similarity_score = file_analyser.compare_files((filepath1, filepath2))
+            similarity_score = file_analyser.compare_files([filepath1, filepath2])
             print(f"File-to-file similarity: {similarity_score}")
 
         elif args.dir:
