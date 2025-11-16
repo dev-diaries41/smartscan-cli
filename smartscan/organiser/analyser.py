@@ -107,6 +107,10 @@ class FileAnalyser:
             allowed_exts = self.valid_vid_exts
 
         files = get_files_from_dirs([dirpath], dir_skip_patterns=["**/.*"], limit=self.max_files_for_prototypes, allowed_exts=allowed_exts)
+
+        if not files:
+            raise ValueError(f"Error generating prototype: no files found for directory: {dirpath}")
+        
         pos = 0
         chunk_size = 4
         embeddings = []
