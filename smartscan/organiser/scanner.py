@@ -1,10 +1,11 @@
 import os
 import uuid
 import hashlib
+import shutil
 from typing import List
+
 from smartscan.organiser.analyser import FileAnalyser
 from smartscan.processor.processor import BatchProcessor
-from smartscan.utils.file import move_file
 from smartscan.data.scan_history import ScanHistoryDB, ScanHistory
 
 
@@ -33,7 +34,7 @@ class FileScanner(BatchProcessor[str, tuple[str, str]]):
         if best_similarity >= self.analyser.similarity_threshold:
             raise ValueError("Below threshold")
 
-        new_path = move_file(source_file, destination_dir)
+        new_path = shutil(source_file, destination_dir)
 
         if new_path is None:
             raise ValueError("Failed to move file")
