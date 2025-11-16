@@ -41,9 +41,8 @@ class FileAnalyser:
         self.refresh_prototype_duration = refresh_prototype_duration
         self.n_frames = n_frames
         
-    def compare_files(self, filepath1: str, filepath2: str):
+    def compare_files(self, files: tuple[str, str]):
         """Compute the cosine similarity between two files"""
-        files = [filepath1, filepath2]
         mode = self._get_mode(files)
         embeddings = self._embed_or_get_batch(files, mode)
         return np.dot(embeddings[0], embeddings[1])
