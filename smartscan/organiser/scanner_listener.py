@@ -1,4 +1,4 @@
-import tqdm
+from tqdm import tqdm
 
 from smartscan.processor.processor_listener import ProcessorListener
 
