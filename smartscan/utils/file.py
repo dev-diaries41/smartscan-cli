@@ -8,9 +8,8 @@ from pathlib import Path
 from smartscan.constants import EMBEDDING_PROVIDERS_DIR
 
 def read_text_file(filepath: str):
-   assert os.path.isfile(filepath), "Invalid file"
-   with open(filepath, 'r', encoding='utf-8') as file:
-            return file.read()       
+    with open(filepath, 'r', encoding='utf-8') as file:
+        return file.read()       
   
 
 def load_dir_list(dirlist_file):
@@ -34,7 +33,7 @@ def get_files_from_dirs(dirs: list[str], dir_skip_patterns: list[str] = [], allo
     
     paths = []
 
-    def get_files(base: Path):
+    def walk(base: Path):
         nonlocal paths
         try:
             for entry in base.iterdir():
@@ -47,14 +46,40 @@ def get_files_from_dirs(dirs: list[str], dir_skip_patterns: list[str] = [], allo
                         return
                     paths.append(str(entry.resolve()))
                 elif entry.is_dir():
-                    get_files(entry)
+                    walk(entry)
         except PermissionError:
             print(f"[Skipped] Permission denied: {base}")
 
     for d in dirs:
         root_dir = Path(d)
         if root_dir.is_dir():
-            get_files(root_dir)
+            walk(root_dir)
+    
+    return paths
+
+
+def get_child_dirs(dirs: list[str], dir_skip_patterns: list[str] = []) -> list[str]:
+    if not isinstance(dirs, list):
+        raise ValueError("Invalid list of directories")
+    
+    paths = []
+
+    def walk(base: Path):
+        nonlocal paths
+        try:
+            for entry in base.iterdir():
+                if entry.is_dir():
+                    if any(entry.match(pat) for pat in dir_skip_patterns):
+                        continue
+                    paths.append(str(entry.resolve()))
+                    walk(entry)
+        except PermissionError:
+            print(f"[Skipped] Permission denied: {base}")
+
+    for d in dirs:
+        root_dir = Path(d)
+        if root_dir.is_dir():
+            walk(root_dir)
     
     return paths
 
