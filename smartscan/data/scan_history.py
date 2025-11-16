@@ -92,7 +92,7 @@ class ScanHistoryDB:
         query_filter = self._build_other_filters(params, filter_opts)
         where_clause = f"WHERE {query_filter}" if query_filter else ""
 
-        query = f"SELECT * FROM scan_history {where_clause}"
+        query = f"SELECT * FROM scan_history {where_clause} ORDER BY timestamp DESC"
         if limit:
             query += f" LIMIT {limit}"
 
