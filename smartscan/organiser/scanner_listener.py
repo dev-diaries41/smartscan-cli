@@ -1,12 +1,21 @@
+from tqdm import tqdm
+
 from smartscan.processor.processor_listener import ProcessorListener
 
 #  Placeholder for dev
 class FileScannerListener(ProcessorListener[str, tuple[str, str]]):
-    def on_active(self):
-        print("Scanning starting...")
+    def __init__(self):
+        self.progress_bar = tqdm(total=100, desc="Scanning")
+
     def on_progress(self, progress):
-        print(f"Progress: {100 * progress:.2f}%")
+        self.progress_bar.n = int(progress * 100)
+        self.progress_bar.refresh()
+        
     def on_fail(self, result):
+        self.progress_bar.close()
         print(result.error)
-    def on_error(self, e, item):
-        print(f"Error processing file: {item} | {e}")
+
+    def on_complete(self, result):
+        self.progress_bar.close()
+        print(f"Results -  Total processed: {result.total_processed} | Time elapsed: {result.time_elapsed:.4f}s")
+

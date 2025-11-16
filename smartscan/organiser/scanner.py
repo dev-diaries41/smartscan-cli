@@ -28,16 +28,13 @@ class FileScanner(BatchProcessor[str, tuple[str, str]]):
             raise ValueError(f"Invalid file: {source_file}")
         
         dir_similarities_dict = self.analyser.compare_file_to_dirs(source_file, self.destination_dirs)
-        dir_similarities = sorted(dir_similarities_dict.items())
+        dir_similarities = sorted(dir_similarities_dict.items(), key=lambda x: x[1], reverse=True)
         destination_dir, best_similarity = dir_similarities[0]
-                    
-        if best_similarity >= self.analyser.similarity_threshold:
+        
+        if best_similarity <= self.analyser.similarity_threshold:
             raise ValueError("Below threshold")
 
-        new_path = shutil(source_file, destination_dir)
-
-        if new_path is None:
-            raise ValueError("Failed to move file")
+        new_path = shutil.move(source_file, destination_dir)
         
         return source_file, str(new_path)
              
