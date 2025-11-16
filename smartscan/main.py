@@ -2,15 +2,16 @@
 
 import os
 import argparse
+import asyncio
 from smartscan.utils.file import load_dir_list, get_files_from_dirs
-from smartscan.constants import  DINO_V2_SMALL_MODEL_PATH, MINILM_MODEL_PATH
+from smartscan.constants import  DINO_V2_SMALL_MODEL_PATH, MINILM_MODEL_PATH, SCAN_HISTORY_DB
 from smartscan.organiser.analyser import FileAnalyser
 from smartscan.organiser.scanner import FileScanner
 from smartscan.ml.providers.embeddings.minilm.text import MiniLmTextEmbedder
 from smartscan.ml.providers.embeddings.dino.image import DinoSmallV2ImageEmbedder
 
 
-def main():
+async def main():
     if not os.path.exists(MINILM_MODEL_PATH):
         raise ValueError(f"Text encoder model not found: {MINILM_MODEL_PATH} ")
 
@@ -103,8 +104,8 @@ def main():
         
         target_dirs = load_dir_list(args.target_file)
         destination_dirs = load_dir_list(args.destination_file)
-        file_scanner = FileScanner(analyser=file_analyser, destination_dirs=destination_dirs)
-        file_scanner.run(get_files_from_dirs(target_dirs))
+        file_scanner = FileScanner(analyser=file_analyser, destination_dirs=destination_dirs, db_path=SCAN_HISTORY_DB)
+        await file_scanner.run(get_files_from_dirs(target_dirs))
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
