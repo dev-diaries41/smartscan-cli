@@ -47,6 +47,8 @@ class ScanHistoryDB:
 
         connection = self._connect_db()
         connection.execute(schema)
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_file_id ON scan_history(file_id)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_destination_file ON scan_history(destination_file)")
         connection.commit()
         connection.close()
 
@@ -116,3 +118,22 @@ class ScanHistoryDB:
         connection.execute("DELETE FROM scan_history")
         connection.commit()
         os.remove(self.path)
+
+    def get_original_source(self, destination_file: str) -> str | None:
+        connection = self._connect_db()
+        query = """
+            SELECT source_file
+            FROM scan_history
+            WHERE file_id = (
+                SELECT file_id
+                FROM scan_history
+                WHERE destination_file = ?
+                LIMIT 1
+            )
+            ORDER BY timestamp ASC
+            LIMIT 1
+        """
+        cursor = connection.execute(query, (destination_file,))
+        row = cursor.fetchone()
+        connection.close()
+        return row[0] if row else None
