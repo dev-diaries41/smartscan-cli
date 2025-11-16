@@ -11,14 +11,18 @@ class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
     def __init__(self, 
                 image_encoder: ImageEmbeddingProvider, 
                 text_encoder: TextEmbeddingProvider,
-                store: Collection,
+                text_store: Collection,
+                image_store: Collection,
+                video_store: Collection,
                 n_frames: int = 10,
                 **kwargs
                 ):
         super().__init__(**kwargs)
         self.image_encoder = image_encoder
         self.text_encoder = text_encoder
-        self.store = store
+        self.text_store = text_store
+        self.image_store = image_store
+        self.video_store = video_store
         self.n_frames = n_frames
         self.valid_img_exts = ('.png', '.jpg', '.jpeg', '.bmp', '.webp')
         self.valid_txt_exts = ('.txt', '.md', '.rst', '.html', '.json')
@@ -26,17 +30,17 @@ class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
 
     def on_process(self, item):
             filepath = item
-            is_image_mode = self._are_files_valid(self.valid_img_exts, [filepath])
-            is_text_mode = self._are_files_valid(self.valid_txt_exts, [filepath])
-            is_video_mode = self._are_files_valid(self.valid_vid_exts, [filepath])
+            is_image_file = self._are_files_valid(self.valid_img_exts, [filepath])
+            is_text_file = self._are_files_valid(self.valid_txt_exts, [filepath])
+            is_video_file = self._are_files_valid(self.valid_vid_exts, [filepath])
 
-            if is_image_mode:
+            if is_image_file:
                 embedder = self.image_encoder 
                 file_embedding = embedder.embed(Image.open(filepath))
-            elif is_text_mode:
+            elif is_text_file:
                 embedder = self.text_encoder
                 file_embedding = embedder.embed(read_text_file(filepath))
-            elif is_video_mode:
+            elif is_video_file:
                 embedder = self.image_encoder
                 file_embedding = embed_video(filepath, self.n_frames, self.image_encoder)
             else:
@@ -48,12 +52,30 @@ class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
     async def on_batch_complete(self, batch):
         if len(batch) <= 0:
             return
-        ids, embeddings = map(list, zip(*batch))
-        self.store.add(
-            ids = ids,
-            embeddings=embeddings
-        )
-       
+        partitions = { "image": ([], []), "text": ([], []), "video": ([], [])}
+
+        for id_, embed in batch:
+            is_image_file = self._are_files_valid(self.valid_img_exts, [id_])
+            is_text_file = self._are_files_valid(self.valid_txt_exts, [id_])
+            is_video_file = self._are_files_valid(self.valid_vid_exts, [id_])
+
+            if is_image_file:
+                partitions['image'][0].append(id_)
+                partitions['image'][1].append(embed)
+            elif is_text_file:
+                partitions['text'][0].append(id_)
+                partitions['text'][1].append(embed)
+            elif is_video_file:
+                partitions['video'][0].append(id_)
+                partitions['video'][1].append(embed)
+        
+        if len(partitions['image'][0]) > 0:
+            self.image_store.add(ids = partitions['image'][0],embeddings=partitions['image'][1])
+        if len(partitions['text'][0]) > 0:
+            self.text_store.add(ids = partitions['text'][0],embeddings=partitions['text'][1])
+        if len(partitions['video'][0]) > 0:
+            self.video_store.add(ids = partitions['video'][0],embeddings=partitions['video'][1])
+                
     
     def _are_files_valid(self, allowed_exts: list[str], files: list[str]) -> bool:
         return all(path.lower().endswith(allowed_exts) for path in files)
