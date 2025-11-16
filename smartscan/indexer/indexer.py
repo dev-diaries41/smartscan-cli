@@ -76,7 +76,25 @@ class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
         if len(partitions['video'][0]) > 0:
             self.video_store.add(ids = partitions['video'][0],embeddings=partitions['video'][1])
                 
-    
+    def filter(self, items: list[str]) -> list[str]:
+        image_ids = self._get_exisiting_ids(self.image_store)
+        text_ids = self._get_exisiting_ids(self.text_store)
+        video_ids = self._get_exisiting_ids(self.video_store)
+        exclude = set(image_ids) | set(text_ids) | set(video_ids)
+        return [item for item in items if item not in exclude]
+       
     def _are_files_valid(self, allowed_exts: list[str], files: list[str]) -> bool:
         return all(path.lower().endswith(allowed_exts) for path in files)
-     
+
+    def _get_exisiting_ids(self, store: Collection) -> list:
+        limit = 100
+        offset = 0
+        ids = []
+
+        while True:
+            batch = store.get(limit=limit, offset=offset)
+            if not batch['ids']:
+                break
+            ids.extend(batch['ids'])
+            offset += limit
+        return ids
