@@ -172,7 +172,7 @@ async def main():
 
         indexer.image_encoder.init()
         indexer.text_encoder.init()
-        _ = await indexer.run(files)
+        _ = await indexer.run(indexer.filter(files))
 
 
 if __name__ == "__main__":
