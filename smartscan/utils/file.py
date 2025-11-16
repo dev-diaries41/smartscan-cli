@@ -1,5 +1,4 @@
 import os
-import shutil
 import datetime
 import numpy as np
 import subprocess
@@ -19,25 +18,6 @@ def load_dir_list(dirlist_file):
     with open(dirlist_file, "r") as f:
         dirs = [line.strip() for line in f if line.strip() and os.path.isdir(line.strip())]
     return dirs
-
-
-def move_file(file_path, target_dir):
-    if not os.path.isfile(file_path):
-        print(f"Error: File '{file_path}' does not exist.")
-        return None
-
-    if not os.path.isdir(target_dir):
-        print(f"Error: Target directory '{target_dir}' does not exist.")
-        return None
-
-    try:
-        new_path = os.path.join(target_dir, os.path.basename(file_path))
-        shutil.move(file_path, new_path)
-        print(f"File moved to {new_path}")
-        return new_path
-    except Exception as e:
-        print(f"Error moving file: {e}")
-        return None
     
 
 def get_days_since_last_modified(file_path: str) -> int:
