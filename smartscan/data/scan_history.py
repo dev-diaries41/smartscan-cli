@@ -6,12 +6,23 @@ import os
 @dataclass
 class ScanHistory:
     scan_id: str
+    file_id: str
     source_file: str
     destination_file: str
     timestamp: str = field(default_factory=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
     def as_tuple(self):
-        return (self.scan_id, self.source_file, self.destination_file, self.timestamp)
+        return (self.scan_id, self.file_id, self.source_file, self.destination_file, self.timestamp)
+
+@dataclass 
+class ScanHistoryFilterOpts:
+    scan_id: str | None = None
+    file_id: str | None = None
+    source_file: str | None = None
+    destination_file: str | None = None
+    start_date: str | None = None
+    end_date: str | None = None
+
 
 class ScanHistoryDB:
     def __init__(self, path: str):
@@ -26,6 +37,7 @@ class ScanHistoryDB:
         schema = """
         CREATE TABLE IF NOT EXISTS scan_history(
         scan_id TEXT,
+        file_id TEXT,
         source_file TEXT,
         destination_file TEXT,
         timestamp TEXT,
@@ -42,53 +54,42 @@ class ScanHistoryDB:
         self.init_db()
         connection = self._connect_db()
         rows = [scan.as_tuple() for scan in scans]
-
         connection.executemany(
             'INSERT INTO scan_history('
-            'scan_id, source_file, destination_file, timestamp) '
-            'VALUES (?, ?, ?, ?)',
+            'scan_id, file_id, source_file, destination_file, timestamp) '
+            'VALUES (?, ?, ?, ?, ?)',
             rows
         )
-
         connection.commit()
         connection.close()
 
-    def _build_date_filter(self, params: list, start_date=None, end_date=None):
+    def _build_other_filters(self, params: list, filter_opts: ScanHistoryFilterOpts | None = None):
         clauses = []
-        if start_date:
+        if filter_opts.start_date:
             clauses.append("timestamp >= ?")
-            params.append(start_date)
-        if end_date:
+            params.append(filter_opts.start_date)
+        if filter_opts.end_date:
             clauses.append("timestamp <= ?")
-            params.append(end_date)
-        return " AND ".join(clauses) if clauses else ""
-
-    def _build_other_filters(self, params: list, source=None, destination=None, scan=None):
-        clauses = []
-        if source:
+            params.append(filter_opts.end_date)
+        if filter_opts.source_file:
             clauses.append("source_file = ?")
-            params.append(source)
-        if destination:
+            params.append(filter_opts.source_file)
+        if filter_opts.destination_file:
             clauses.append("destination_file = ?")
-            params.append(destination)
-        if scan:
+            params.append(filter_opts.destination_file)
+        if filter_opts.scan_id:
             clauses.append("scan_id = ?")
-            params.append(scan)
+            params.append(filter_opts.scan_id)
+        if filter_opts.file_id:
+            clauses.append("file_id = ?")
+            params.append(filter_opts.file_id)
         return " AND ".join(clauses) if clauses else ""
 
-    def get(self, start_date=None, end_date=None, limit=None, source=None, destination=None, scan=None):
+    def get(self, filter_opts: ScanHistoryFilterOpts | None = None, limit=None):
         connection = self._connect_db()
         params = []
-
-        filters = []
-        date_filter = self._build_date_filter(params, start_date, end_date)
-        if date_filter:
-            filters.append(date_filter)
-        other_filter = self._build_other_filters(params, source, destination, scan)
-        if other_filter:
-            filters.append(other_filter)
-
-        where_clause = f"WHERE {' AND '.join(filters)}" if filters else ""
+        query_filter = self._build_other_filters(params, filter_opts)
+        where_clause = f"WHERE {query_filter}" if query_filter else ""
 
         query = f"SELECT * FROM scan_history {where_clause}"
         if limit:
@@ -99,22 +100,12 @@ class ScanHistoryDB:
         connection.close()
         return results
     
-    def delete(self, start_date=None, end_date=None, source=None, destination=None, scan=None):
+    def delete(self, filter_opts: ScanHistoryFilterOpts | None = None):
         connection = self._connect_db()
         params = []
-
-        filters = []
-        date_filter = self._build_date_filter(params, start_date, end_date)
-        if date_filter:
-            filters.append(date_filter)
-        other_filter = self._build_other_filters(params, source, destination, scan)
-        if other_filter:
-            filters.append(other_filter)
-
-        where_clause = f"WHERE {' AND '.join(filters)}" if filters else ""
-
+        query_filter = self._build_other_filters(params, filter_opts)
+        where_clause = f"WHERE {query_filter}" if query_filter else ""
         query = f"DELETE FROM scan_history {where_clause}"
-
         connection.execute(query, params)
         connection.commit()
         connection.close()
