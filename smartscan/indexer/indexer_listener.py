@@ -1,12 +1,21 @@
 import numpy as np
-
+from tqdm import tqdm
 from smartscan.processor.processor_listener import ProcessorListener
 
 # TODO: Websockets / SSE with desktop app
 class FileIndexerListener(ProcessorListener[str, tuple[str, np.ndarray]]):
-    def on_active(self):
-        print("Indexing starting...")
+    def __init__(self):
+        self.progress_bar = tqdm(total=100, desc="Indexing")
+
     def on_progress(self, progress):
-        print(f"Progress: {100 * progress:.2f}%")
+        self.progress_bar.n = int(progress * 100)
+        self.progress_bar.refresh()
+        
     def on_fail(self, result):
+        self.progress_bar.close()
         print(result.error)
+
+    def on_complete(self, result):
+        self.progress_bar.close()
+        print(f"Results -  Total processed: {result.total_processed} | Time elapsed: {result.time_elapsed:.4f}s")
+
