@@ -45,5 +45,6 @@ class FileScanner(BatchProcessor[str, tuple[str, str]]):
         scans = [ScanHistory(scan_id=str(uuid.uuid4()), file_id=self._hash_string(move_info[0]), source_file=move_info[0], destination_file=move_info[1]) for move_info in batch]
         self.scan_history_db.add(scans)
     
+    @staticmethod
     def _hash_string(s: str) -> str:
         return hashlib.sha256(s.encode()).hexdigest()
