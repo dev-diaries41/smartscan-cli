@@ -65,6 +65,7 @@ class ScanHistoryDB:
 
     def _build_other_filters(self, params: list, filter_opts: ScanHistoryFilterOpts | None = None):
         clauses = []
+        filter_opts = filter_opts or ScanHistoryFilterOpts()
         if filter_opts.start_date:
             clauses.append("timestamp >= ?")
             params.append(filter_opts.start_date)
