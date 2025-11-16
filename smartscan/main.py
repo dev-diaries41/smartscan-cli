@@ -2,15 +2,17 @@
 
 import os
 import argparse
+import asyncio
 from smartscan.utils.file import load_dir_list, get_files_from_dirs
-from smartscan.constants import  DINO_V2_SMALL_MODEL_PATH, MINILM_MODEL_PATH
+from smartscan.constants import  DINO_V2_SMALL_MODEL_PATH, MINILM_MODEL_PATH, SCAN_HISTORY_DB
 from smartscan.organiser.analyser import FileAnalyser
 from smartscan.organiser.scanner import FileScanner
+from smartscan.organiser.scanner_listener import FileScannerListener
 from smartscan.ml.providers.embeddings.minilm.text import MiniLmTextEmbedder
 from smartscan.ml.providers.embeddings.dino.image import DinoSmallV2ImageEmbedder
 
 
-def main():
+async def main():
     if not os.path.exists(MINILM_MODEL_PATH):
         raise ValueError(f"Text encoder model not found: {MINILM_MODEL_PATH} ")
 
@@ -93,7 +95,7 @@ def main():
             dirpaths = load_dir_list(dirlist_file)
             dirs_similarities = file_analyser.compare_file_to_dirs(filepath, dirpaths)
             print(f"File-to-directories similarity\n--------------------------\n")
-            for (key, value) in sorted(dirs_similarities.items(), reverse=True):
+            for (key, value) in sorted(dirs_similarities.items()):
                 print(f"Directory: {key} | Similarity: {value}")
 
     elif args.command == "scan":
@@ -103,8 +105,10 @@ def main():
         
         target_dirs = load_dir_list(args.target_file)
         destination_dirs = load_dir_list(args.destination_file)
-        file_scanner = FileScanner(analyser=file_analyser, destination_dirs=destination_dirs)
-        file_scanner.run(get_files_from_dirs(target_dirs))
+        file_scanner = FileScanner(analyser=file_analyser, destination_dirs=destination_dirs, db_path=SCAN_HISTORY_DB , listener = FileScannerListener())
+        allowed_exts = file_analyser.valid_img_exts + file_analyser.valid_txt_exts + file_analyser.valid_vid_exts
+        result = await file_scanner.run(get_files_from_dirs(target_dirs, allowed_exts=allowed_exts))
+        print(f"Scan results - files moved: {result.total_processed} | time elpased: {result.time_elapsed:.2f}s")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

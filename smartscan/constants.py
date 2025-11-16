@@ -13,4 +13,7 @@ INCEPTION_RESNET_MODEL_PATH = os.path.join(BASE_DIR, 'models/inception_resnet_v1
 # Providers
 EMBEDDING_PROVIDERS_DIR = os.path.join(BASE_DIR, "smartscan/ml/providers/embeddings")
 
+# DB
+SCAN_HISTORY_DB = os.path.join(BASE_DIR, "db/scan_history.db")
+
 

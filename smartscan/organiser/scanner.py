@@ -11,29 +11,34 @@ class FileScanner(BatchProcessor[str, tuple[str, str]]):
     def __init__(self, 
                  analyser: FileAnalyser,
                  destination_dirs: List[str],
-                 db_path: str
+                 db_path: str,
+                 **kwargs
                  ):
+        super().__init__(**kwargs)
         self.analyser = analyser
         self.destination_dirs = destination_dirs
         self.scan_history_db = ScanHistoryDB(db_path)
 
     def on_process(self, item):
-        soruce_file = item
+        source_file = item
 
-        if os.path.isfile(soruce_file):
-            raise ValueError(f"Invalid file: {soruce_file}")
+        if not os.path.isfile(source_file):
+            raise ValueError(f"Invalid file: {source_file}")
         
-        destination_dir, best_similarity = self.analyser.compare_file_to_dirs(soruce_file, self.destination_dirs)
+        dir_similarities_dict = self.analyser.compare_file_to_dirs(source_file, self.destination_dirs)
+        dir_similarities = sorted(dir_similarities_dict.items())
+        destination_dir, best_similarity = dir_similarities[0]
+        print(f"Best: {destination_dir}")
                     
-        if best_similarity >= self.similarity_threshold:
+        if best_similarity >= self.analyser.similarity_threshold:
             raise ValueError("Below threshold")
 
-        new_path = move_file(soruce_file, destination_dir)
+        new_path = move_file(source_file, destination_dir)
 
         if new_path is None:
             raise ValueError("Failed to move file")
         
-        return soruce_file, str(new_path)
+        return source_file, str(new_path)
              
     
     async def on_batch_complete(self, batch):
