@@ -44,7 +44,7 @@ class FileAnalyser:
     def compare_files(self, files: list[str]):
         """Compute the cosine similarity between two files"""
         mode = self._get_mode(files)
-        embeddings = self._embed_or_get_batch(files, mode)
+        embeddings = self._get_or_embed_batch(files, mode)
         return np.dot(embeddings[0], embeddings[1])
     
 
@@ -63,7 +63,7 @@ class FileAnalyser:
         Compute the cosine similarity between a file and a directory.
         """
         mode = self._get_mode([filepath])
-        file_embedding = self._embed_or_get(filepath, mode)
+        file_embedding = self._get_or_embed(filepath, mode)
         return self.compare_embedding_to_dir(file_embedding, dirpath, mode)
 
     def compare_file_to_dirs(self, filepath: str, dirpaths: List[str]) -> dict[str, float]:
@@ -74,7 +74,7 @@ class FileAnalyser:
 
             dirs_similarities: dict[str, float] = {}
             mode = self._get_mode([filepath])
-            file_embedding = self._embed_or_get(filepath, mode)
+            file_embedding = self._get_or_embed(filepath, mode)
 
             for dirpath in dirpaths:
                 try:
@@ -116,7 +116,7 @@ class FileAnalyser:
         embeddings = []
         while(pos < len(files)):
             file_batch = files[pos : (pos + chunk_size)]
-            batch_embeddings = self._embed_or_get_batch(file_batch, mode)
+            batch_embeddings = self._get_or_embed_batch(file_batch, mode)
             embeddings.append(batch_embeddings)
             pos += chunk_size
         
@@ -157,7 +157,7 @@ class FileAnalyser:
             raise ValueError("Unsupported file type")
         return mode
     
-    def _embed_or_get(self, filepath: str, mode: AnalyserMode):
+    def _get_or_embed(self, filepath: str, mode: AnalyserMode):
         if mode == AnalyserMode.IMAGE:
             embedder = self.image_encoder 
             result = self.image_store.get(ids=[filepath], include=['embeddings']) 
@@ -185,7 +185,7 @@ class FileAnalyser:
         return file_embedding
     
 
-    def _embed_or_get_batch(self, files: list[str], mode: AnalyserMode):
+    def _get_or_embed_batch(self, files: list[str], mode: AnalyserMode):
         if mode == AnalyserMode.IMAGE:
             embedder = self.image_encoder
             result = self.image_store.get(ids=files, include=['embeddings']) 
