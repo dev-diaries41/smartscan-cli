@@ -1,16 +1,21 @@
 import os
+import uuid
 from typing import List
 from smartscan.organiser.analyser import FileAnalyser
 from smartscan.processor.processor import BatchProcessor
 from smartscan.utils.file import move_file
+from smartscan.data.scan_history import ScanHistoryDB, ScanHistory
+
 
 class FileScanner(BatchProcessor[str, tuple[str, str]]):
     def __init__(self, 
                  analyser: FileAnalyser,
-                 destination_dirs: List[str]
+                 destination_dirs: List[str],
+                 db_path: str
                  ):
         self.analyser = analyser
         self.destination_dirs = destination_dirs
+        self.scan_history_db = ScanHistoryDB(db_path)
 
     def on_process(self, item):
         soruce_file = item
@@ -31,7 +36,6 @@ class FileScanner(BatchProcessor[str, tuple[str, str]]):
         return soruce_file, str(new_path)
              
     
-    def on_batch_complete(self, batch):
-        # TODO add move history to sqlite db
-        return super().on_batch_complete(batch)
- 
+    async def on_batch_complete(self, batch):
+        scans = [ScanHistory(scan_id=str(uuid.uuid4()), source_file=move_info[0], destination_file=move_info[1]) for move_info in batch]
+        self.scan_history_db.add(scans)
