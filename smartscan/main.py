@@ -168,7 +168,7 @@ async def main():
         elif args.dirs:
             dirpaths = args.dirs
         allowed_exts = indexer.valid_img_exts + indexer.valid_txt_exts + indexer.valid_vid_exts
-        files = get_files_from_dirs(dirpaths, allowed_exts=indexer.valid_txt_exts)
+        files = get_files_from_dirs(dirpaths, allowed_exts=allowed_exts)
 
         indexer.image_encoder.init()
         indexer.text_encoder.init()
