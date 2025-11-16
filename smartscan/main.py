@@ -65,7 +65,7 @@ async def main():
         metadata={"description": "Collection for images"}
     ) 
     video_store = client.get_or_create_collection(
-        name="test_video_collection",
+        name="video_collection",
         metadata={"description": "Collection for videos"}
     )
 
