@@ -1,5 +1,6 @@
 import os
 import uuid
+import hashlib
 from typing import List
 from smartscan.organiser.analyser import FileAnalyser
 from smartscan.processor.processor import BatchProcessor
@@ -28,7 +29,6 @@ class FileScanner(BatchProcessor[str, tuple[str, str]]):
         dir_similarities_dict = self.analyser.compare_file_to_dirs(source_file, self.destination_dirs)
         dir_similarities = sorted(dir_similarities_dict.items())
         destination_dir, best_similarity = dir_similarities[0]
-        print(f"Best: {destination_dir}")
                     
         if best_similarity >= self.analyser.similarity_threshold:
             raise ValueError("Below threshold")
@@ -42,5 +42,9 @@ class FileScanner(BatchProcessor[str, tuple[str, str]]):
              
     
     async def on_batch_complete(self, batch):
-        scans = [ScanHistory(scan_id=str(uuid.uuid4()), source_file=move_info[0], destination_file=move_info[1]) for move_info in batch]
+        scans = [ScanHistory(scan_id=str(uuid.uuid4()), file_id=self._hash_string(move_info[0]), source_file=move_info[0], destination_file=move_info[1]) for move_info in batch]
         self.scan_history_db.add(scans)
+    
+    @staticmethod
+    def _hash_string(s: str) -> str:
+        return hashlib.sha256(s.encode()).hexdigest()
