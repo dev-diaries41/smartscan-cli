@@ -31,8 +31,8 @@ async def main():
     compare_parser = subparsers.add_parser("compare", help="Perform comparisons using different modes.")
     compare_group = compare_parser.add_mutually_exclusive_group(required=True)
     compare_group.add_argument("-f", "--file",nargs=2,metavar=("FILEPATH1", "FILEPATH2"),help="Compare two text or image files.")
-    compare_group.add_argument("-d", "--dir",nargs=2,metavar=("FILEPATH", "DIRPATH"),help="Compare a text or image file against a directory.")
-    compare_group.add_argument("-l", "--dirs",nargs=2,metavar=("FILEPATH", "DIRLISTFILE"),help="Compare a text or image file against multiple directories listed in a file.")
+    compare_group.add_argument("-d", "--dir",nargs=2,metavar=("FILEPATH", "DIRPATH"),help="Compare a file against a directory.")
+    compare_group.add_argument("-l", "--dirs",nargs=2,metavar=("FILEPATH", "DIRLISTFILE"),help="Compare a file against multiple directories listed in a file.")
 
     scan_parser = subparsers.add_parser("scan", help="Scan directories and auto organise files into directories.")
     scan_parser.add_argument("-t", "--threshold",type=float,default=0.4,help="Similarity threshold for the scans. Default is 0.4.")
