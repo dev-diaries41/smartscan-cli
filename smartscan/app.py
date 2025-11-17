@@ -49,17 +49,14 @@ app.add_middleware(
 )
 
 @app.post("/api/search/image")
-async def search(
-    input_image: UploadFile = File(...),
-    threshold: float = Form(0.6),
-):
-    if input_image.filename is None:
-        raise HTTPException(status_code=400, detail="Missing input_image")
-    if not are_valid_files(ALLOWED_EXT, [input_image.filename]):
-        raise HTTPException(status_code=400, detail="Invalid input_image format")
+async def search_images(query_image: UploadFile = File(...),threshold: float = Form(0.6),):
+    if query_image.filename is None:
+        raise HTTPException(status_code=400, detail="Missing query_image")
+    if not are_valid_files(ALLOWED_EXT, [query_image.filename]):
+        raise HTTPException(status_code=400, detail="Unsupported file type")
 
     try:
-        image = Image.open(input_image.file)
+        image = Image.open(query_image.file)
         query_embedding = await run_in_threadpool(image_encoder.embed, image)
 
     except Exception as _:
@@ -78,12 +75,35 @@ async def search(
     return JSONResponse({"results": ids})
 
 
+@app.post("/api/search/video")
+async def search_videos(query_image: UploadFile = File(...),threshold: float = Form(0.6),):
+    if query_image.filename is None:
+        raise HTTPException(status_code=400, detail="Missing query_image")
+    if not are_valid_files(ALLOWED_EXT, [query_image.filename]):
+        raise HTTPException(status_code=400, detail="Unsupported file type")
+
+    try:
+        image = Image.open(query_image.file)
+        query_embedding = await run_in_threadpool(image_encoder.embed, image)
+
+    except Exception as _:
+            raise HTTPException(status_code=500, detail="Error generating embedding")
+
+    try:
+          results = video_store.query(query_embeddings=[query_embedding])
+    except Exception as _:
+            raise HTTPException(status_code=500, detail="Error querying database")
+
+    ids = []
+    for id_, distance in zip(results['ids'][0], results['distances'][0]):
+        if distance <= threshold:
+            ids.append(id_)
+    
+    return JSONResponse({"results": ids})
+
 
 @app.post("/api/search/text")
-async def search(
-    query: str,
-    threshold: float = Form(0.6),
-):
+async def search_documents(query: str, threshold: float = Form(0.6),):
     if query is None:
         raise HTTPException(status_code=400, detail="Missing query text")
   
@@ -104,6 +124,7 @@ async def search(
             ids.append(id_)
     
     return JSONResponse({"results": ids})
+    
 
 
 # In production: uvicorn facial_recognition.app:app --host 0.0.0.0 --port 8000 --workers 4
