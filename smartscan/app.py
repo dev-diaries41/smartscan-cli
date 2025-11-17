@@ -1,7 +1,7 @@
 import chromadb
 from PIL import Image
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException,  WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.concurrency import run_in_threadpool
@@ -9,7 +9,9 @@ from fastapi.concurrency import run_in_threadpool
 from smartscan.constants import DB_DIR, SMARTSCAN_CONFIG_PATH, MODEL_REGISTRY
 from smartscan.config import load_config
 from smartscan.utils.embeddings import get_image_encoder, get_text_encoder
-from smartscan.utils.file import are_valid_files
+from smartscan.utils.file import are_valid_files, get_files_from_dirs
+from smartscan.indexer.indexer import FileIndexer
+from smartscan.indexer.indexer_listener import FileIndexerWebSocketListener
 
 config = load_config(SMARTSCAN_CONFIG_PATH)
 
@@ -35,6 +37,7 @@ text_encoder = get_text_encoder(text_encoder_path)
 
 image_encoder.init()
 text_encoder.init()
+
 
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50MB
 ALLOWED_EXT = ('png', 'jpg', 'jpeg', 'bmp', 'webp')
@@ -124,8 +127,31 @@ async def search_documents(query: str, threshold: float = Form(0.6),):
             ids.append(id_)
     
     return JSONResponse({"results": ids})
-    
 
 
-# In production: uvicorn facial_recognition.app:app --host 0.0.0.0 --port 8000 --workers 4
+@app.websocket("/ws/index")
+async def index(ws: WebSocket):
+    await ws.accept()
 
+    listener = FileIndexerWebSocketListener(ws)
+    indexer = FileIndexer(
+        image_encoder=image_encoder,
+        text_encoder=text_encoder,
+        image_store=image_store,
+        text_store=text_store,
+        video_store=video_store,
+        listener=listener,
+    )
+
+    try:
+        while True:
+            msg = await ws.receive_json()
+            if msg.get("action") == "index":
+                dirpaths = msg.get("dirs", [])
+                allowed_exts = indexer.valid_img_exts + indexer.valid_txt_exts + indexer.valid_vid_exts
+                files = get_files_from_dirs(dirpaths, allowed_exts=allowed_exts)
+                await indexer.run(files)
+            elif msg.get("action") == "stop":
+                break
+    except WebSocketDisconnect:
+        print("Client disconnected")
