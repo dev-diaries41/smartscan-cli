@@ -15,6 +15,7 @@ from smartscan.indexer.indexer import FileIndexer
 from smartscan.indexer.indexer_listener import FileIndexerListener
 from smartscan.data.scan_history import ScanHistoryDB, ScanHistoryFilterOpts
 from smartscan.config import load_config
+from smartscan.utils.embeddings import get_image_encoder, get_text_encoder
 
 def existing_file(path):
     if not os.path.isfile(path):
@@ -99,8 +100,8 @@ async def main():
             clear_prototype_files(args.clear_dir_prototypes)
             
         file_analyser = FileAnalyser(
-            image_encoder_path=image_encoder_path,
-            text_encoder_path=text_encoder_path,
+            image_encoder=get_image_encoder(image_encoder_path),
+            text_encoder=get_text_encoder(text_encoder_path),
             similarity_threshold=config.similarity_threshold,
             image_store=image_store,
             text_store=text_store,
@@ -132,8 +133,8 @@ async def main():
             clear_prototype_files(args.clear_dir_prototypes)
             
         file_analyser = FileAnalyser(
-            image_encoder_path=image_encoder_path,
-            text_encoder_path=text_encoder_path,
+            image_encoder=get_image_encoder(image_encoder_path),
+            text_encoder=get_text_encoder(text_encoder_path),
             similarity_threshold=config.similarity_threshold,
             image_store=image_store,
             text_store=text_store,
@@ -169,8 +170,8 @@ async def main():
     
     elif args.command == "index":
         indexer = FileIndexer(
-            image_encoder_path=image_encoder_path,
-            text_encoder_path=text_encoder_path,
+            image_encoder=get_image_encoder(image_encoder_path),
+            text_encoder=get_text_encoder(text_encoder_path),
             image_store=image_store,
             text_store=text_store,
             video_store=video_store,

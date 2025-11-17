@@ -37,11 +37,11 @@ class BatchProcessor(ABC, Generic[Input, Output]):
                 print(f"No items to process")
                 result = MetricsSuccess()
                 if self.listener is not None:
-                    self.listener.on_complete(result)
+                    await self.listener.on_complete(result)
                 return result
             
             if self.listener is not None:
-                self.listener.on_active()
+                await self.listener.on_active()
             
             batch_start = 0
 
@@ -51,13 +51,13 @@ class BatchProcessor(ABC, Generic[Input, Output]):
                         return await asyncio.to_thread(self.on_process, item)
                     except Exception as e:
                         if self.listener is not None:
-                            self.listener.on_error(e, item)
+                            await self.listener.on_error(e, item)
                         return None
                     finally:
                         if self.listener is not None:
                             current = await processed_count.increment_and_get()
                             progress = current / len(items)
-                            self.listener.on_progress(progress)
+                            await self.listener.on_progress(progress)
 
             while batch_start < len(items):
                 concurrency = self.memory_manager.calculate_concurrency()
@@ -75,13 +75,13 @@ class BatchProcessor(ABC, Generic[Input, Output]):
             end = time.perf_counter()
             result = MetricsSuccess(total_processed=success_count, time_elapsed=end - start)
             if self.listener is not None:
-                self.listener.on_complete(result)
+                await self.listener.on_complete(result)
             return result
         except Exception as e:
             end = time.perf_counter()
             result = MetricsFailure(time_elapsed=end - start, total_processed=success_count, error=e)
             if self.listener is not None:
-                self.listener.on_fail(result)
+                await self.listener.on_fail(result)
             return result
         
     # Doesnt need to be async becasue its wrapped in asyncio.to_thread

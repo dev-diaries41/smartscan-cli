@@ -132,18 +132,12 @@ def get_frames_from_video(video_path: str, n_frames: int):
     proc.wait()
     return frames
 
-
-def list_embedding_providers(providers_path: str) -> dict[str, str]:
-    paths = get_files_from_dirs([providers_path], allowed_exts=('.py'))
-    filtered_paths = [p for p in paths if any(emb_type in p for emb_type in ('face', 'image', 'text'))]
-    providers = {}
-    for p in filtered_paths:
-        path = Path(p)
-        providers[f"{path.parent.name}_{path.stem}"] = path.stem
-    return providers
-
 def clear_prototype_files(dirs: list[str]):
     files = [file for file in get_files_from_dirs(dirs, allowed_exts=('.pkl')) if "prototype" in file]
     for file in files:
         os.remove(file)
         print(f"Successfully deleted prototype: {file}")
+
+def are_valid_files(allowed_exts: list[str], files: list[str]) -> bool:
+    return all(path.lower().endswith(allowed_exts) for path in files)
+    
