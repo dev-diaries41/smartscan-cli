@@ -1,5 +1,5 @@
 #!/bin/bash
 
 BASE_DIR="$HOME/.smartscan"
-
-"$BASE_DIR/venv/bin/python" "$BASE_DIR/main.py" "$@"
+cd "$BASE_DIR" || exit 1
+PYTHONPATH="$BASE_DIR" "$BASE_DIR/venv/bin/python" -m smartscan.main "$@"
