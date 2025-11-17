@@ -28,12 +28,14 @@ async def main():
     subparsers = parser.add_subparsers(dest='command', required=True)
 
     compare_parser = subparsers.add_parser("compare", help="Perform comparisons using different modes.")
+    compare_parser.add_argument("--n-frames",type=int, default=10,help="Number of frames to use when generating video embedding. Default is 10")
     compare_group = compare_parser.add_mutually_exclusive_group(required=True)
     compare_group.add_argument("-f", "--file",nargs=2,metavar=("FILEPATH1", "FILEPATH2"),help="Compare two text or image files.")
     compare_group.add_argument("-d", "--dir",nargs=2,metavar=("FILEPATH", "DIRPATH"),help="Compare a file against a directory.")
     compare_group.add_argument("-l", "--dirs",nargs=2,metavar=("FILEPATH", "DIRLISTFILE"),help="Compare a file against multiple directories listed in a file.")
 
     scan_parser = subparsers.add_parser("scan", help="Scan directories and auto organise files into directories.")
+    scan_parser.add_argument("--n-frames",type=int, default=10,help="Number of frames to use when generating video embedding. Default is 10")
     scan_parser.add_argument("-t", "--threshold",type=float,default=0.4,help="Similarity threshold for the scans. Default is 0.4.")
     scan_group = scan_parser.add_mutually_exclusive_group(required=True)
     scan_group.add_argument("dirlist_file", nargs="?", metavar="DIRLISTFILE", help="File listing target directories to scan.")
@@ -77,6 +79,7 @@ async def main():
             image_store=image_store,
             text_store=text_store,
             video_store=video_store,
+            n_frames_limit=args.n_frames
         )
 
         file_analyser.image_encoder.init()
@@ -114,6 +117,7 @@ async def main():
             image_store=image_store,
             text_store=text_store,
             video_store=video_store,
+            n_frames_limit=args.n_frames
         )
 
         file_analyser.similarity_threshold = args.threshold
@@ -141,7 +145,8 @@ async def main():
             image_store=image_store,
             text_store=text_store,
             video_store=video_store,
-            listener = FileIndexerListener()
+            listener = FileIndexerListener(),
+            n_frames=args.n_frames
         )
 
         if args.dirlist_file:
