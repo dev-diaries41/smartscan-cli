@@ -1,6 +1,8 @@
 import os
-import numpy as np
 import pickle
+import threading
+import numpy as np
+
 from typing import List
 from enum import IntEnum
 from PIL import Image
@@ -48,23 +50,17 @@ class FileAnalyser:
         self.refresh_prototype_duration = refresh_prototype_duration
         self.n_frames = n_frames_limit
         self.n_chunks = n_chunks_limit
+        self._prototype_locks: dict[str, threading.Lock] = {}
         
     def compare_files(self, files: list[str]):
         """Compute the cosine similarity between two files"""
         mode = self._get_mode(files)
         embeddings = self._get_or_embed_batch(files, mode)
         return np.dot(embeddings[0], embeddings[1])
-    
 
     def compare_embedding_to_dir(self, embedding: np.ndarray, dirpath: str, mode: AnalyserMode):
-        prototype_embedding_filepath = self._get_prototype_path(dirpath, mode)
-        if os.path.exists(prototype_embedding_filepath) and not self._is_prototype_stale(prototype_embedding_filepath):
-            prototype_embedding = self.load_embedding(prototype_embedding_filepath)
-        else:
-            prototype_embedding = self._generate_prototype_for_dir(dirpath, mode)
-        self.save_embedding(prototype_embedding_filepath, prototype_embedding)
+        prototype_embedding = self._get_prototype(dirpath, mode)
         return np.dot(embedding, prototype_embedding)
-    
     
     def compare_file_to_dir(self, filepath: str, dirpath: str):
         """
@@ -149,6 +145,19 @@ class FileAnalyser:
             prefix = "video"
 
         return os.path.join(dirpath, f".{prefix}_prototype_embedding.pkl")
+        
+    # Lock is used to prevent race conditions when doing async batch processing
+    def _get_prototype(self, dirpath: str, mode: AnalyserMode):
+        prototype_embedding_filepath = self._get_prototype_path(dirpath, mode)
+
+        lock = self._prototype_locks.setdefault(dirpath, threading.Lock())
+        with lock:
+            if os.path.exists(prototype_embedding_filepath) and not self._is_prototype_stale(prototype_embedding_filepath):
+                prototype_embedding = self.load_embedding(prototype_embedding_filepath)
+            else:
+                prototype_embedding = self._generate_prototype_for_dir(dirpath, mode)
+            self.save_embedding(prototype_embedding_filepath, prototype_embedding)
+        return prototype_embedding
     
     def _get_mode(self, files: str) -> AnalyserMode:
         is_image_mode = self._are_files_valid(self.valid_img_exts, files)

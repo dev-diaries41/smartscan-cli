@@ -6,7 +6,7 @@ import asyncio
 import chromadb
 import subprocess
 
-from smartscan.utils.file import load_dir_list, get_files_from_dirs, get_child_dirs
+from smartscan.utils.file import load_dir_list, get_files_from_dirs, get_child_dirs,clear_prototype_files
 from smartscan.constants import  SCAN_HISTORY_DB, DB_DIR, SMARTSCAN_CONFIG_PATH, MODEL_REGISTRY
 from smartscan.organiser.analyser import FileAnalyser
 from smartscan.organiser.scanner import FileScanner
@@ -41,7 +41,10 @@ async def main():
     parser = argparse.ArgumentParser(description="CLI tool for comparing text or image embeddings and scanning directories.")
     subparsers = parser.add_subparsers(dest='command', required=True)
 
-    compare_parser = subparsers.add_parser("compare", help="Perform comparisons using different modes.")
+    common_parent = argparse.ArgumentParser(add_help=False)
+    common_parent.add_argument("--clear-dir-prototypes",nargs="+", type=existing_dir, metavar=("DIRLIST"),help="Clear all prototype embeddings for dirs")
+
+    compare_parser = subparsers.add_parser("compare", help="Perform comparisons using different modes.", parents=[common_parent])
     compare_parser.add_argument("--n-frames",type=int, default=10,help="Number of frames to use when generating video embedding. Default is 10")
     compare_parser.add_argument("file", default=10, type=existing_file,help="Source file to compare to")
     compare_group = compare_parser.add_mutually_exclusive_group(required=True)
@@ -49,7 +52,7 @@ async def main():
     compare_group.add_argument("--dirs",nargs="+", type=existing_dir, metavar=("DIRLIST"),help="List of target directories to be compared to source file.")
     compare_group.add_argument("--dirlist-file", type=existing_file,metavar=("DIRLISTFILE"),help="File listing target directories to be compared to source file.")
 
-    autosort_parser = subparsers.add_parser("autosort", help="Scan directories and auto organise files into directories.")
+    autosort_parser = subparsers.add_parser("autosort", help="Scan directories and auto organise files into directories.", parents=[common_parent])
     autosort_parser.add_argument("-t", "--threshold",type=float,default=config.similarity_threshold,help="Similarity threshold for the scans. Default is 0.7.")
     autosort_parser.add_argument("--n-frames",type=int, default=10,help="Number of frames to use when generating video embedding. Default is 10")
     autosort_group = autosort_parser.add_mutually_exclusive_group(required=True)
@@ -92,6 +95,9 @@ async def main():
     )
 
     if args.command == "compare":
+        if args.clear_dir_prototypes:
+            clear_prototype_files(args.clear_dir_prototypes)
+            
         file_analyser = FileAnalyser(
             image_encoder_path=image_encoder_path,
             text_encoder_path=text_encoder_path,
@@ -122,6 +128,9 @@ async def main():
                 print(f"Directory: {key} | Similarity: {value}")
 
     elif args.command == "autosort":
+        if args.clear_dir_prototypes:
+            clear_prototype_files(args.clear_dir_prototypes)
+            
         file_analyser = FileAnalyser(
             image_encoder_path=image_encoder_path,
             text_encoder_path=text_encoder_path,
