@@ -5,9 +5,8 @@ import subprocess
 import numpy as np
 import re
 import shutil
+import json
 from pathlib import Path
-
-from smartscan.constants import EMBEDDING_PROVIDERS_DIR
 from smartscan.data.scan_history import ScanHistoryDB
 
 def read_text_file(filepath: str):
@@ -137,8 +136,8 @@ def get_frames_from_video(video_path: str, n_frames: int):
     return frames
 
 
-def list_embedding_providers() -> dict[str, str]:
-    paths = get_files_from_dirs([EMBEDDING_PROVIDERS_DIR], allowed_exts=('.py'))
+def list_embedding_providers(providers_path: str) -> dict[str, str]:
+    paths = get_files_from_dirs([providers_path], allowed_exts=('.py'))
     filtered_paths = [p for p in paths if any(emb_type in p for emb_type in ('face', 'image', 'text'))]
     providers = {}
     for p in filtered_paths:
@@ -150,7 +149,6 @@ def clear_prototype_files(dirs: list[str]):
     files = [file for file in get_files_from_dirs(dirs, allowed_exts=('.pkl')) if "prototype" in file]
     for file in files:
         os.remove(file)
-
 
 def restore_files(destination_files: list[str], db: ScanHistoryDB):
     restore_failed = []
@@ -168,3 +166,7 @@ def restore_files(destination_files: list[str], db: ScanHistoryDB):
     print(f"{restored_count} files restored successfully")
     for invalid_file in restore_failed:
         print(f"Failed to restore: {invalid_file}")
+
+def load_config(path: str):
+    with open(path, "r") as f:
+        return json.load(f)
