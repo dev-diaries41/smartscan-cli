@@ -62,7 +62,7 @@ class BatchProcessor(ABC, Generic[Input, Output]):
             while batch_start < len(items):
                 concurrency = self.memory_manager.calculate_concurrency()
                 semaphore = Semaphore(concurrency)
-                batch_end = batch_start + self.batchs_size
+                batch_end = batch_start + self.batch_size
                 batch = items[batch_start : batch_end]
                 tasks = [async_task(item, semaphore) for item in batch]
                 batch_outputs = await asyncio.gather(*tasks)
