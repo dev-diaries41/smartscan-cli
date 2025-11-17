@@ -5,7 +5,6 @@ import subprocess
 import numpy as np
 import re
 import shutil
-import json
 from pathlib import Path
 from smartscan.data.scan_history import ScanHistoryDB
 
@@ -166,7 +165,3 @@ def restore_files(destination_files: list[str], db: ScanHistoryDB):
     print(f"{restored_count} files restored successfully")
     for invalid_file in restore_failed:
         print(f"Failed to restore: {invalid_file}")
-
-def load_config(path: str):
-    with open(path, "r") as f:
-        return json.load(f)
