@@ -2,7 +2,7 @@
 Description=Run SmartScan Script
 
 [Service]
-EnvironmentFile=%h/.smartscan/smartscan.conf
+EnvironmentFile=%h/.smartscan/smartscan.json
 ExecStart=/bin/bash -c '/usr/local/bin/smartscan scan'
 
 [Install]
