@@ -169,14 +169,14 @@ async def main():
         if args.file:
             restore_files([args.file], db)
         elif args.files:
-            restore_files(args.files)
+            restore_files(args.files, db)
         elif args.start_date or args.end_date:
             scans = db.get(filter_opts=ScanHistoryFilterOpts(start_date=args.start_date, end_date=args.end_date))
             if not scans:
                 print(f"No scan history found matching dates")
                 return
             destination_files = set([scan['destination_file'] for scan in scans])
-            restore_files(destination_files)
+            restore_files(destination_files, db)
         
 
 if __name__ == "__main__":
