@@ -49,8 +49,22 @@ disable(){
   echo "Service disabled successfully"
 }
 
+logs(){
+  journalctl --user -xeu smartscan.service
+}
+
+help(){
+  echo "Usage: ------------------"
+  echo "Setup: ./systemd.sh setup"
+  echo "Enable: ./systemd.sh enable"
+  echo "Disable: ./systemd.sh disable"
+  echo "Logs: ./systemd.sh logs"
+}
+
 case "$1" in
   setup) setup ;;
   enable) enable ;;
   disable) disable ;;
+  logs) logs ;;
+  *) help ;;
 esac
