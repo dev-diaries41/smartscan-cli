@@ -5,12 +5,13 @@ from chromadb import Collection
 from smartscan.processor.processor import BatchProcessor
 from smartscan.utils.file import read_text_file
 from smartscan.utils.embeddings import embed_video, get_text_encoder, get_image_encoder
+from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider
 
 
 class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
     def __init__(self, 
-                image_encoder_path: str, 
-                text_encoder_path: str,
+                image_encoder: ImageEmbeddingProvider, 
+                text_encoder: TextEmbeddingProvider,
                 text_store: Collection,
                 image_store: Collection,
                 video_store: Collection,
@@ -18,8 +19,8 @@ class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
                 **kwargs
                 ):
         super().__init__(**kwargs)
-        self.image_encoder = get_image_encoder(image_encoder_path)
-        self.text_encoder = get_text_encoder(text_encoder_path)
+        self.image_encoder = image_encoder
+        self.text_encoder = text_encoder
         self.text_store = text_store
         self.image_store = image_store
         self.video_store = video_store

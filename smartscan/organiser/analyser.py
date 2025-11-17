@@ -10,7 +10,7 @@ from chromadb import Collection
 
 from smartscan.utils.file import get_days_since_last_modified, get_files_from_dirs, read_text_file
 from smartscan.utils.embeddings import generate_prototype_embedding, embed_video, chunk_text, get_image_encoder, get_text_encoder
-
+from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider
 
 class AnalyserMode(IntEnum):
     TEXT = 0
@@ -19,8 +19,8 @@ class AnalyserMode(IntEnum):
 
 class FileAnalyser:
     def __init__(self, 
-                image_encoder_path: str, 
-                text_encoder_path: str,
+                image_encoder: ImageEmbeddingProvider, 
+                text_encoder: TextEmbeddingProvider,
                 text_store: Collection,
                 image_store: Collection,
                 video_store: Collection,
@@ -30,8 +30,8 @@ class FileAnalyser:
                 n_frames_limit = 10,
                 n_chunks_limit = 5
                  ):
-        self.image_encoder = get_image_encoder(image_encoder_path)
-        self.text_encoder = get_text_encoder(text_encoder_path)
+        self.image_encoder = image_encoder
+        self.text_encoder = text_encoder
         self.text_store = text_store
         self.image_store = image_store
         self.video_store = video_store
