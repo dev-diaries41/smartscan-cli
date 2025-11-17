@@ -142,3 +142,8 @@ def list_embedding_providers() -> dict[str, str]:
         path = Path(p)
         providers[f"{path.parent.name}_{path.stem}"] = path.stem
     return providers
+
+def clear_prototype_files(dirs: list[str]):
+    files = [file for file in get_files_from_dirs(dirs, allowed_exts=('.pkl')) if "prototype" in file]
+    for file in files:
+        os.remove(file)
