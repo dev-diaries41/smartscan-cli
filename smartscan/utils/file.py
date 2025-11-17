@@ -146,3 +146,4 @@ def clear_prototype_files(dirs: list[str]):
     files = [file for file in get_files_from_dirs(dirs, allowed_exts=('.pkl')) if "prototype" in file]
     for file in files:
         os.remove(file)
+        print(f"Successfully deleted prototype: {file}")
