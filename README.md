@@ -1,133 +1,179 @@
-# SmartScan-CLI
+# SmartScan-Py
 
-SmartScan-CLI is a command-line tool for Linux systems with systemd support. It uses OpenAI's CLIP model to compare vector embeddings and measure similarity between files and directories. It can be used for manual comparisons or automated file organization. It is the CLI version of the [SmartScan Android app](https://github.com/dev-diaries41/smartscan).
+## Overview
+
+SmartScan-Py is a Python tool for automated file management and search (desktop app integration coming soon) based on semantic similarity. It supports multiple embedding providers for generating embeddings and is the Python implementation of the [SmartScan Android app](https://github.com/dev-diaries41/smartscan).
 
 ## Features
-- Compare a file to a directory of files to find the most similar match.
-- Compare two files to determine their similarity.
-- Compare a file to multiple directories using a list file.
-- Scan and automatically organize files into destination directories based on similarity thresholds, monitoring target directories for changes.
+
+* Supports text, image, and video files.
+* Index files in target directories.
+* Compare files or directories to determine semantic similarity.
+* Automatically organize files based on similarity thresholds.
+* Restore files to original location after unintended moves.
+* Auto-organize files daily using systemd.
+
+> **Caution:** Use high thresholds (e.g., 0.7+) for automatic organization to avoid undesired moves. The `restore` command can revert moves.
 
 ---
 
-## Installation  
+## Installation
 
-### Prerequisites  
-- Python 3.10  
+### Prerequisites
 
-### Installation Steps  
-1. Clone the repository:  
-   ```sh
-   git clone https://github.com/dev-diaries41/smartscan-cli.git
-   cd smartscan-cli
-   ```  
-2. Set executable permissions for the install script:  
-   ```sh
+* Python 3.10+
+
+### Installation Steps
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/dev-diaries41/smartscan-py.git
+   cd smartscan-py
+   ```
+2. Set executable permissions for the install script:
+
+   ```bash
    chmod 777 install.sh
-   ```  
-3. Run the installation script:  
-   ```sh
+   ```
+3. Run the installation script:
+
+   ```bash
    ./install.sh
-   ```  
-   This will install the required dependencies, create a virtual environment, and set up the necessary directories. All relevant configuration and data files will be stored in the `$HOME/.smartscan` directory.
+   ```
+
+   This installs dependencies, creates a virtual environment, and sets up necessary directories under `$HOME/.smartscan`.
 
 ---
-
 
 ## Usage
 
-SmartScan uses two main commands: **compare** and **scan**. The **compare** command provides different modes for comparing files and directories, while the **scan** command is used for automatically organizing files based on a similarity threshold.
+SmartScan-Py supports four main commands: `compare`, `scan`, `index`, and `restore`.
 
-### Supported file types
+### Supported File Types
 
-Image: '.png', '.jpg', '.jpeg', '.bmp', '.gif'
-Text: '.txt', '.md', '.rst', '.html', '.json'
+* **Images:** `.png`, `.jpg`, `.jpeg`, `.bmp`, `.webp`
+* **Text:** `.txt`, `.md`, `.rst`, `.html`, `.json`
+* **Videos:** `.mp4`, `.mkv`, `.webm`
 
-### Compare Command
+---
 
-The `compare` command offers three modes, determined by the flags used:
+## Compare Command
 
-#### File-to-File Comparison
-Compare two files to measure their similarity.
-Flag: `-f or --file`
+Compare files or directories to measure semantic similarity.
 
-```sh
-smartscan compare -f <FILEPATH1> <FILEPATH2>
+```bash
+smartscan compare [OPTIONS]
 ```
+
+Modes:
+
+1. **File-to-File**
+
+   ```bash
+   smartscan compare -f <FILEPATH1> <FILEPATH2>
+   ```
+
+   Compare two text or image files.
+
+2. **File-to-Directory**
+
+   ```bash
+   smartscan compare -d <FILEPATH> <DIRPATH>
+   ```
+
+   Compare a file against all files in a directory.
+
+3. **File-to-Multiple Directories**
+
+   ```bash
+   smartscan compare -l <FILEPATH> <DIRLISTFILE>
+   ```
+
+   Compare a file against multiple directories listed in a file (one per line).
+
+---
+
+## Scan Command
+
+Scan directories and automatically organize files.
+
+```bash
+smartscan scan [DIRLISTFILE or --dirs DIRS...] [-t THRESHOLD]
+```
+
+* `DIRLISTFILE` – text file listing directories to scan.
+* `--dirs DIRS...` – alternatively, list directories directly.
+* `-t, --threshold` – similarity threshold (default: `0.4`).
+
 Example:
-```sh
-smartscan compare -f doc1.txt doc2.txt
+
+```bash
+smartscan scan target_dirs.txt -t 0.8
+smartscan scan --dirs /path/one /path/two -t 0.7
 ```
 
-#### File-to-Directory Comparison
-Compare a single file against a directory of files to determine a similarity between the file and the directory's contents.
-Flag: `-d or --dir`
+---
 
-```sh
-smartscan compare -d <FILEPATH> <DIRPATH>
+## Index Command
+
+Index files from selected directories for faster future comparisons.
+
+```bash
+smartscan index [DIRLISTFILE or --dirs DIRS...] [--n-frames N]
 ```
+
+* `--n-frames` – number of frames to use for video embeddings (default: `10`).
+
 Example:
-```sh
-smartscan compare -d sample.txt documents/
+
+```bash
+smartscan index dir_list.txt
+smartscan index --dirs /videos /images --n-frames 15
 ```
 
-#### File-to-Multiple Directories Comparison
-Compare a file against multiple directories specified in a list file.
-Flag: `-l or --dirs`
+---
 
-```sh
-smartscan compare -l <FILEPATH> <DIRLISTFILE>
+## Restore Command
+
+Restore previously moved files.
+
+```bash
+smartscan restore [OPTIONS]
 ```
+
+Options:
+
+* `FILE` – single file to restore.
+* `--files FILES...` – list of files to restore.
+* `--start-date DATE` / `--end-date DATE` – restore files moved during a date range.
+
 Example:
-```sh
-smartscan compare -l sample.txt dir_list.txt
+
+```bash
+smartscan restore myfile.txt
+smartscan restore --files file1.txt file2.txt
+smartscan restore --start-date 2025-01-01 --end-date 2025-01-15
 ```
-Where `dir_list.txt` contains a list of directories (one per line).
-
-
-### Scan Command
-
-The `scan` command automatically scans target directories and moves files to the best matching destination directory if the similarity meets a specified threshold (default is 0.7).
-
-```sh
-smartscan scan <TARGET_FILE> <DESTINATION_FILE> [-t THRESHOLD]
-```
-Example:
-```sh
-smartscan scan target_dirs.txt destination_dirs.txt -t 0.8
-```
-- **TARGET_FILE**: A file listing the target directories to monitor for changes.
-- **DESTINATION_FILE**: A file listing the directories where files should be moved based on similarity.
-- **-t, --threshold**: (Optional) Set a custom similarity threshold for file organization. Defaults to 0.7 if not provided.
 
 ---
 
 ## Systemd Integration for Daily Scans
 
-To make it easier to run scans daily, you can set up a systemd timer to execute SmartScan automatically. Follow these steps to enable it:
+1. **Create SmartScan configuration** at `$HOME/.smartscan/smartscan.conf`:
 
-1. **Create the SmartScan Configuration File**:
-   The SmartScan configuration file (`smartscan.conf`) is essential for defining the directories to be monitored and where files should be moved. You need to manually create this file in the `$HOME/.smartscan` directory.
+```bash
+TARGET_FILE=/path/to/target_dirs.txt
+THRESHOLD=0.7
+```
 
-   Example of `smartscan.conf`:
+2. **Run setup script**:
 
-   ```bash
-   TARGET_FILE=/path/to/target_dirs.txt
-   DESTINATION_FILE=/path/to/destination_dirs.txt
-   THRESHOLD=0.7 #optional
-   ```
+```bash
+chmod 777 setup_systemd.sh
+./setup_systemd.sh
+```
 
-2. **Setup systemd using `setup_systemd.sh`**:
-   The `setup_systemd.sh` script will automatically move the necessary systemd files to the appropriate system directories and enable the timer to run SmartScan daily. To do this, simply run:
-
-  ```sh
-   chmod 777 setup_systemd.sh
-   ```
-
-   ```sh
-   ./setup_systemd.sh
-   ```
-
-3. **After running the script**, your system will be set up to automatically run SmartScan scans daily. You can adjust the scan schedule by modifying the `smartscan.timer` file located in `$HOME/.smartscan/systemd/`.
+3. Adjust the schedule by editing `$HOME/.smartscan/systemd/smartscan.timer`.
 
 ---
