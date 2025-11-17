@@ -9,6 +9,12 @@ from chromadb import Collection
 from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider, EmbeddingProvider
 from smartscan.utils.file import get_days_since_last_modified, get_files_from_dirs, read_text_file
 from smartscan.utils.embeddings import generate_prototype_embedding, embed_video, chunk_text
+from smartscan.constants import CLIP_IMAGE_MODEL_PATH, DINO_V2_SMALL_MODEL_PATH, CLIP_TEXT_MODEL_PATH, MINILM_MODEL_PATH
+from smartscan.ml.providers.embeddings.minilm.text import MiniLmTextEmbedder
+from smartscan.ml.providers.embeddings.dino.image import DinoSmallV2ImageEmbedder
+from smartscan.ml.providers.embeddings.clip.text import ClipTextEmbedder
+from smartscan.ml.providers.embeddings.clip.image import ClipImageEmbedder
+
 
 
 class AnalyserMode(IntEnum):
@@ -18,8 +24,8 @@ class AnalyserMode(IntEnum):
 
 class FileAnalyser:
     def __init__(self, 
-                image_encoder: ImageEmbeddingProvider, 
-                text_encoder: TextEmbeddingProvider,
+                image_encoder_path: str, 
+                text_encoder_path: str,
                 text_store: Collection,
                 image_store: Collection,
                 video_store: Collection,
@@ -29,8 +35,8 @@ class FileAnalyser:
                 n_frames_limit = 10,
                 n_chunks_limit = 5
                  ):
-        self.image_encoder = image_encoder
-        self.text_encoder = text_encoder
+        self.image_encoder = self._get_image_encoder(image_encoder_path)
+        self.text_encoder = self._get_text_encoder(text_encoder_path)
         self.text_store = text_store
         self.image_store = image_store
         self.video_store = video_store
@@ -217,3 +223,19 @@ class FileAnalyser:
             raise ValueError("Unsupported file type")
         
         return embeddings
+    
+    @staticmethod
+    def _get_image_encoder(path: str) -> ImageEmbeddingProvider:
+        if path == DINO_V2_SMALL_MODEL_PATH:
+            return DinoSmallV2ImageEmbedder(path)
+        elif path == CLIP_IMAGE_MODEL_PATH:
+            return ClipImageEmbedder(path)
+        raise ValueError(f"Invalid model path: {path}")
+    
+    @staticmethod
+    def _get_text_encoder(path: str) -> TextEmbeddingProvider:
+        if path == MINILM_MODEL_PATH:
+            return MiniLmTextEmbedder(path)
+        elif path == CLIP_TEXT_MODEL_PATH:
+            return ClipTextEmbedder(path)
+        raise ValueError(f"Invalid model path: {path}")
