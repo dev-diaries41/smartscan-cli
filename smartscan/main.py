@@ -72,15 +72,15 @@ async def main():
 
     client = chromadb.PersistentClient(path=DB_DIR)
     text_store = client.get_or_create_collection(
-        name="text_collection",
+        name=f"{config.text_encoder_model}_text_collection",
         metadata={"description": "Collection for text documents"}
     )
     image_store = client.get_or_create_collection(
-        name="image_collection",
+        name=f"{config.image_encoder_model}_image_collection",
         metadata={"description": "Collection for images"}
     ) 
     video_store = client.get_or_create_collection(
-        name="video_collection",
+        name=f"{config.image_encoder_model}_video_collection",
         metadata={"description": "Collection for videos"}
     )
 
