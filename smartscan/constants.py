@@ -17,4 +17,7 @@ EMBEDDING_PROVIDERS_DIR = os.path.join(BASE_DIR, "smartscan/ml/providers/embeddi
 DB_DIR = os.path.join(BASE_DIR, "db")
 SCAN_HISTORY_DB = os.path.join(BASE_DIR, "db/scan_history.db")
 
+# Config
+SMARTSCAN_CONFIG_PATH = os.path.join(BASE_DIR, "smartscan.json")
+
 
