@@ -4,9 +4,8 @@ import os
 import argparse
 import asyncio
 import chromadb
-import shutil
 
-from smartscan.utils.file import load_dir_list, get_files_from_dirs, get_child_dirs
+from smartscan.utils.file import load_dir_list, get_files_from_dirs, get_child_dirs, restore_files
 from smartscan.constants import  DINO_V2_SMALL_MODEL_PATH, MINILM_MODEL_PATH, SCAN_HISTORY_DB, DB_DIR
 from smartscan.organiser.analyser import FileAnalyser
 from smartscan.organiser.scanner import FileScanner
@@ -163,51 +162,16 @@ async def main():
         db = ScanHistoryDB(SCAN_HISTORY_DB)
 
         if args.file:
-            original_source = db.get_original_source(args.file)
-            if not original_source:
-                print("Original source file not found")
-                return
-            shutil.move(args.file, original_source)
-            print(f"File restored successfully: {original_source}")
+            restore_files([args.file], db)
         elif args.files:
-            source_files = [db.get_original_source(df) for df in args.files]
-            restore_failed = []
-            restored_count = 0
-            for idx, source in enumerate(source_files):
-                if source:
-                    try:
-                        shutil.move(args.files[idx], source)
-                        restored_count += 1
-                    except Exception:
-                        restore_failed.append(source) 
-                else:
-                    restore_failed.append(source) 
-            print(f"{restored_count} files restored successfully")
-            for invalid_file in restore_failed:
-                print(f"Failed to restore: {invalid_file}")
+            restore_files(args.files)
         elif args.start_date or args.end_date:
             scans = db.get(filter_opts=ScanHistoryFilterOpts(start_date=args.start_date, end_date=args.end_date))
             if not scans:
                 print(f"No scan history found matching dates")
                 return
             destination_files = set([scan['destination_file'] for scan in scans])
-            source_files = [db.get_original_source(df) for df in destination_files]
-            restore_failed = []
-            restored_count = 0
-            for dest in destination_files:
-                original = db.get_original_source(dest)
-                if original:
-                    try:
-                        shutil.move(dest, original)
-                        restored_count += 1
-                    except Exception:
-                        restore_failed.append(dest)
-                else:
-                    restore_failed.append(dest)
-
-            print(f"{restored_count} files restored successfully")
-            for f in restore_failed:
-                print(f"Failed to restore: {f}")
+            restore_files(destination_files)
         
 
 if __name__ == "__main__":
