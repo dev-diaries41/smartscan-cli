@@ -8,7 +8,7 @@ from chromadb import Collection
 
 from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider, EmbeddingProvider
 from smartscan.utils.file import get_days_since_last_modified, get_files_from_dirs, read_text_file
-from smartscan.utils.embeddings import generate_prototype_embedding, embed_video
+from smartscan.utils.embeddings import generate_prototype_embedding, embed_video, chunk_text
 
 
 class AnalyserMode(IntEnum):
@@ -26,7 +26,8 @@ class FileAnalyser:
                 similarity_threshold: float,
                 max_files_for_prototypes: int = 30,
                 refresh_prototype_duration: int  = 7,
-                n_frames = 10
+                n_frames_limit = 10,
+                n_chunks_limit = 5
                  ):
         self.image_encoder = image_encoder
         self.text_encoder = text_encoder
@@ -39,7 +40,8 @@ class FileAnalyser:
         self.valid_vid_exts = ('.mp4', '.mkv', '.webm')
         self.max_files_for_prototypes = max_files_for_prototypes
         self.refresh_prototype_duration = refresh_prototype_duration
-        self.n_frames = n_frames
+        self.n_frames = n_frames_limit
+        self.n_chunks = n_chunks_limit
         
     def compare_files(self, files: list[str]):
         """Compute the cosine similarity between two files"""
@@ -54,7 +56,7 @@ class FileAnalyser:
             prototype_embedding = self.load_embedding(prototype_embedding_filepath)
         else:
             prototype_embedding = self._generate_prototype_for_dir(dirpath, mode)
-            self.save_embedding(prototype_embedding_filepath, prototype_embedding)
+        self.save_embedding(prototype_embedding_filepath, prototype_embedding)
         return np.dot(embedding, prototype_embedding)
     
     
@@ -171,7 +173,9 @@ class FileAnalyser:
             if len(result['embeddings']) == 1:
                 file_embedding = result['embeddings']
             else:
-                file_embedding = embedder.embed(read_text_file(filepath))
+                chunks = chunk_text(read_text_file(filepath), 128, self.n_chunks)
+                chunk_embeddings = embedder.embed_batch(chunks)
+                file_embedding = generate_prototype_embedding(chunk_embeddings)
         elif mode == AnalyserMode.VIDEO:
             embedder = self.image_encoder
             result = self.video_store.get(ids=[filepath], include=['embeddings']) 
@@ -199,7 +203,10 @@ class FileAnalyser:
             if len(result['embeddings']) == len(files):
                 embeddings = result['embeddings']
             else:
-                embeddings = embedder.embed_batch([read_text_file(path) for path in files])
+                text_batch = [read_text_file(path) for path in files]
+                chunks_batch = [chunk_text(text, 128, self.n_chunks) for text in text_batch]
+                embeddings_batch = [embedder.embed_batch(chunks) for chunks in chunks_batch]
+                embeddings = np.stack([generate_prototype_embedding(embeds) for embeds in embeddings_batch], axis=0)
         elif mode == AnalyserMode.VIDEO:
             result = self.video_store.get(ids=files, include=['embeddings']) 
             if len(result['embeddings']) == len(files):
