@@ -7,15 +7,15 @@ class FileIndexerListener(ProcessorListener[str, tuple[str, np.ndarray]]):
     def __init__(self):
         self.progress_bar = tqdm(total=100, desc="Indexing")
 
-    def on_progress(self, progress):
+    async def on_progress(self, progress):
         self.progress_bar.n = int(progress * 100)
         self.progress_bar.refresh()
         
-    def on_fail(self, result):
+    async def on_fail(self, result):
         self.progress_bar.close()
         print(result.error)
 
-    def on_complete(self, result):
+    async def on_complete(self, result):
         self.progress_bar.close()
-        print(f"Results -  Total processed: {result.total_processed} | Time elapsed: {result.time_elapsed:.4f}s")
+        print(f"Results -  Files indexed: {result.total_processed} | Time elapsed: {result.time_elapsed:.4f}s")
 
