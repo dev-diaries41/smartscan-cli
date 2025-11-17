@@ -5,7 +5,6 @@ import subprocess
 import numpy as np
 import re
 from pathlib import Path
-from smartscan.constants import EMBEDDING_PROVIDERS_DIR
 
 def read_text_file(filepath: str):
     with open(filepath, 'r', encoding='utf-8') as file:
@@ -134,8 +133,8 @@ def get_frames_from_video(video_path: str, n_frames: int):
     return frames
 
 
-def list_embedding_providers() -> dict[str, str]:
-    paths = get_files_from_dirs([EMBEDDING_PROVIDERS_DIR], allowed_exts=('.py'))
+def list_embedding_providers(providers_path: str) -> dict[str, str]:
+    paths = get_files_from_dirs([providers_path], allowed_exts=('.py'))
     filtered_paths = [p for p in paths if any(emb_type in p for emb_type in ('face', 'image', 'text'))]
     providers = {}
     for p in filtered_paths:

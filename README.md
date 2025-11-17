@@ -71,23 +71,23 @@ Modes:
 1. **File-to-File**
 
    ```bash
-   smartscan compare -f <FILEPATH1> <FILEPATH2>
+   smartscan compare <FILEPATH> <TARGETFILE>
    ```
 
-   Compare two text or image files.
+   Compare two files.
 
-2. **File-to-Directory**
+2a. **File-to-Multiple Directories (inline list)**
 
    ```bash
-   smartscan compare -d <FILEPATH> <DIRPATH>
+   smartscan compare <FILEPATH> --dirs DIR1 DIR2 DIR3
    ```
 
-   Compare a file against all files in a directory.
+   Compare a file against multiple directories inline.
 
-3. **File-to-Multiple Directories**
+2b. **File-to-Multiple Directories (from file)**
 
    ```bash
-   smartscan compare -l <FILEPATH> <DIRLISTFILE>
+   smartscan compare <FILEPATH> --dirlist-file <DIRLISTFILE>
    ```
 
    Compare a file against multiple directories listed in a file (one per line).
