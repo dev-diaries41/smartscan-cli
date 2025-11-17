@@ -4,3 +4,4 @@ venv/
 *.onnx
 smartscan.conf
 db
+smartscan.json
