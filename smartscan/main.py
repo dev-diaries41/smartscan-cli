@@ -17,6 +17,10 @@ from smartscan.indexer.indexer_listener import FileIndexerListener
 from smartscan.data.scan_history import ScanHistoryDB, ScanHistoryFilterOpts
 from smartscan.config import load_config
 
+def existing_file(path):
+    if not os.path.isfile(path):
+        raise argparse.ArgumentTypeError(f"File not found: {path}")
+    return path
 
 async def main():
     if not os.path.exists(MINILM_MODEL_PATH):
@@ -32,29 +36,30 @@ async def main():
 
     compare_parser = subparsers.add_parser("compare", help="Perform comparisons using different modes.")
     compare_parser.add_argument("--n-frames",type=int, default=10,help="Number of frames to use when generating video embedding. Default is 10")
+    compare_parser.add_argument("file", default=10, type=existing_file,help="Source file to compare to")
     compare_group = compare_parser.add_mutually_exclusive_group(required=True)
-    compare_group.add_argument("-f", "--file",nargs=2,metavar=("FILEPATH1", "FILEPATH2"),help="Compare two text or image files.")
-    compare_group.add_argument("-d", "--dir",nargs=2,metavar=("FILEPATH", "DIRPATH"),help="Compare a file against a directory.")
-    compare_group.add_argument("-l", "--dirs",nargs=2, metavar=("FILEPATH", "DIRLISTFILE"),help="Compare a file against multiple directories listed in a file.")
+    compare_group.add_argument("target_file", nargs="?",type=existing_file, metavar=("TARGETFILE"),help="Target file to be compared to source file.")
+    compare_group.add_argument("--dirs",nargs="+",default=config.target_dirs, metavar=("DIRLIST"),help="List of target directories to be compared to source file.")
+    compare_group.add_argument("--dirlist-file", type=existing_file,metavar=("DIRLISTFILE"),help="File listing target directories to be compared to source file.")
 
     scan_parser = subparsers.add_parser("scan", help="Scan directories and auto organise files into directories.")
     scan_parser.add_argument("--n-frames",type=int, default=10,help="Number of frames to use when generating video embedding. Default is 10")
     scan_parser.add_argument("-t", "--threshold",type=float,default=config.similarity_threshold,help="Similarity threshold for the scans. Default is 0.4.")
     scan_group = scan_parser.add_mutually_exclusive_group(required=True)
-    scan_group.add_argument("dirlist_file", nargs="?", metavar="DIRLISTFILE", help="File listing target directories to scan.")
+    scan_group.add_argument("dirlist_file", nargs="?", type=existing_file, metavar="DIRLISTFILE", help="File listing target directories to scan.")
     scan_group.add_argument("--dirs",nargs='+', default=config.target_dirs, metavar="DIRLIST", help="List of directories to scan.")
 
     index_parser = subparsers.add_parser("index", help="Index files from selected directories.")
     index_parser.add_argument("--n-frames",type=int, default=10,help="Number of frames to use when generating video embedding. Default is 10")
     index_group = index_parser.add_mutually_exclusive_group(required=True)
-    index_group.add_argument("dirlist_file",nargs='?', metavar="DIRLISTFILE", help="File listing target directories to index.")
+    index_group.add_argument("dirlist_file",nargs='?', type=existing_file,metavar="DIRLISTFILE", help="File listing target directories to index.")
     index_group.add_argument("--dirs",nargs='+', default=config.target_dirs, metavar="DIRLIST", help="List of directories to index.")
 
     restore_parser = subparsers.add_parser("restore", help="Restore files that were moved to their original location.")
     restore_parser.add_argument("--start-date",type=str,default=None,help="The start_date period of when to restore")
     restore_parser.add_argument("--end-date",type=str,default=None,help="The start_date period of when to restore")
     restore_group = restore_parser.add_mutually_exclusive_group(required=False)
-    restore_group.add_argument("file",nargs='?',metavar="FILETORESTORE",help="File to restore")
+    restore_group.add_argument("file",nargs='?',type=existing_file,metavar="FILETORESTORE",help="File to restore")
     restore_group.add_argument("--files",nargs='+',metavar="FILESTORESTORE",help="List of files to restore.")
 
     args = parser.parse_args()
@@ -78,7 +83,7 @@ async def main():
         file_analyser = FileAnalyser(
             image_encoder=DinoSmallV2ImageEmbedder(DINO_V2_SMALL_MODEL_PATH),
             text_encoder=MiniLmTextEmbedder(MINILM_MODEL_PATH),
-            similarity_threshold=0.4,
+            similarity_threshold=config.similarity_threshold,
             image_store=image_store,
             text_store=text_store,
             video_store=video_store,
@@ -88,26 +93,18 @@ async def main():
         file_analyser.image_encoder.init()
         file_analyser.text_encoder.init()
 
-        if args.file:
-            filepath1, filepath2 = args.file
-            if not os.path.isfile(filepath1) or not os.path.isfile(filepath2):
-                raise argparse.ArgumentTypeError(f"One or both files not found: {filepath1}, {filepath2}")
+        if args.target_file:
+            filepath1, filepath2 = args.file, args.target_file
             similarity_score = file_analyser.compare_files([filepath1, filepath2])
             print(f"File-to-file similarity: {similarity_score}")
 
-        elif args.dir:
-            filepath, dirpath = args.dir
-            if not os.path.isfile(filepath) or not os.path.isdir(dirpath):
-                raise argparse.ArgumentTypeError(f"Invalid file or directory: {filepath}, {dirpath}")
-            similarity_score = file_analyser.compare_file_to_dir(filepath, dirpath)
-            print(f"File-to-directory similarity: {similarity_score}")
-
-        elif args.dirs:
-            filepath, dirlist_file = args.dirs
-            if not os.path.isfile(filepath) or not os.path.isfile(dirlist_file):
-                raise argparse.ArgumentTypeError(f"Invalid file or directory list: {filepath}, {dirlist_file}")
-            dirpaths = load_dir_list(dirlist_file)
-            dirs_similarities = file_analyser.compare_file_to_dirs(filepath, dirpaths)
+        elif args.dirs or args.dirlist_file:
+            source_filepath = args.file
+            if args.dirlist_file:
+                dirpaths = load_dir_list(args.dirlist_file)
+            else:
+                dirpaths = args.dirs
+            dirs_similarities = file_analyser.compare_file_to_dirs(source_filepath, dirpaths)
             print(f"File-to-directories similarity\n--------------------------\n")
             for (key, value) in sorted(dirs_similarities.items(), key=lambda x: x[1], reverse=True):
                 print(f"Directory: {key} | Similarity: {value}")
@@ -126,8 +123,6 @@ async def main():
         file_analyser.similarity_threshold = args.threshold
        
         if args.dirlist_file:
-            if not os.path.isfile(args.dirlist_file):
-                raise argparse.ArgumentTypeError(f"Target file not found: {args.dirlist_file}")
             target_dirs = load_dir_list(args.target_file)
         else:
             target_dirs = args.dirs
@@ -153,9 +148,6 @@ async def main():
         )
 
         if args.dirlist_file:
-            if not os.path.isfile(args.dirlist_file):
-                raise argparse.ArgumentTypeError(f"Invalid file: {dirlist_file}")
-            
             dirpaths = load_dir_list(args.dirlist_file)
         elif args.dirs:
             dirpaths = args.dirs
