@@ -6,12 +6,10 @@ import asyncio
 import chromadb
 
 from smartscan.utils.file import load_dir_list, get_files_from_dirs, get_child_dirs
-from smartscan.constants import  DINO_V2_SMALL_MODEL_PATH, MINILM_MODEL_PATH, SCAN_HISTORY_DB, DB_DIR, SMARTSCAN_CONFIG_PATH
+from smartscan.constants import  SCAN_HISTORY_DB, DB_DIR, SMARTSCAN_CONFIG_PATH, MODEL_REGISTRY
 from smartscan.organiser.analyser import FileAnalyser
 from smartscan.organiser.scanner import FileScanner
 from smartscan.organiser.scanner_listener import FileScannerListener
-from smartscan.ml.providers.embeddings.minilm.text import MiniLmTextEmbedder
-from smartscan.ml.providers.embeddings.dino.image import DinoSmallV2ImageEmbedder
 from smartscan.indexer.indexer import FileIndexer
 from smartscan.indexer.indexer_listener import FileIndexerListener
 from smartscan.data.scan_history import ScanHistoryDB, ScanHistoryFilterOpts
@@ -28,14 +26,17 @@ def existing_dir(path: str) -> str:
     return path
 
 async def main():
-    if not os.path.exists(MINILM_MODEL_PATH):
-        raise ValueError(f"Text encoder model not found: {MINILM_MODEL_PATH} ")
-
-    if not os.path.exists(DINO_V2_SMALL_MODEL_PATH):
-        raise ValueError(f"Image encoder model not found: {DINO_V2_SMALL_MODEL_PATH}")
-
-
     config = load_config(SMARTSCAN_CONFIG_PATH)
+    text_encoder_path = MODEL_REGISTRY[config.text_encoder_model]['path']
+    image_encoder_path = MODEL_REGISTRY[config.image_encoder_model]['path']
+
+    if not os.path.isfile(text_encoder_path):
+        raise ValueError(f"Text encoder model not found: {text_encoder_path} ")
+
+    if not os.path.isfile(image_encoder_path):
+        raise ValueError(f"Image encoder model not found: {image_encoder_path}")
+
+
     parser = argparse.ArgumentParser(description="CLI tool for comparing text or image embeddings and scanning directories.")
     subparsers = parser.add_subparsers(dest='command', required=True)
 
@@ -85,8 +86,8 @@ async def main():
 
     if args.command == "compare":
         file_analyser = FileAnalyser(
-            image_encoder=DinoSmallV2ImageEmbedder(DINO_V2_SMALL_MODEL_PATH),
-            text_encoder=MiniLmTextEmbedder(MINILM_MODEL_PATH),
+            image_encoder_path=image_encoder_path,
+            text_encoder_path=text_encoder_path,
             similarity_threshold=config.similarity_threshold,
             image_store=image_store,
             text_store=text_store,
@@ -115,9 +116,9 @@ async def main():
 
     elif args.command == "scan":
         file_analyser = FileAnalyser(
-            image_encoder=DinoSmallV2ImageEmbedder(DINO_V2_SMALL_MODEL_PATH),
-            text_encoder=MiniLmTextEmbedder(MINILM_MODEL_PATH),
-            similarity_threshold=0.4,
+            image_encoder_path=image_encoder_path,
+            text_encoder_path=text_encoder_path,
+            similarity_threshold=config.similarity_threshold,
             image_store=image_store,
             text_store=text_store,
             video_store=video_store,
@@ -142,8 +143,8 @@ async def main():
     
     elif args.command == "index":
         indexer = FileIndexer(
-            image_encoder=DinoSmallV2ImageEmbedder(DINO_V2_SMALL_MODEL_PATH),
-            text_encoder=MiniLmTextEmbedder(MINILM_MODEL_PATH),
+            image_encoder_path=image_encoder_path,
+            text_encoder_path=text_encoder_path,
             image_store=image_store,
             text_store=text_store,
             video_store=video_store,
