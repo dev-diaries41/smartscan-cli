@@ -5,8 +5,8 @@ import argparse
 import asyncio
 import chromadb
 
-from smartscan.utils.file import load_dir_list, get_files_from_dirs, get_child_dirs, restore_files
-from smartscan.constants import  DINO_V2_SMALL_MODEL_PATH, MINILM_MODEL_PATH, SCAN_HISTORY_DB, DB_DIR
+from smartscan.utils.file import load_dir_list, get_files_from_dirs, get_child_dirs
+from smartscan.constants import  DINO_V2_SMALL_MODEL_PATH, MINILM_MODEL_PATH, SCAN_HISTORY_DB, DB_DIR, SMARTSCAN_CONFIG_PATH
 from smartscan.organiser.analyser import FileAnalyser
 from smartscan.organiser.scanner import FileScanner
 from smartscan.organiser.scanner_listener import FileScannerListener
@@ -15,6 +15,8 @@ from smartscan.ml.providers.embeddings.dino.image import DinoSmallV2ImageEmbedde
 from smartscan.indexer.indexer import FileIndexer
 from smartscan.indexer.indexer_listener import FileIndexerListener
 from smartscan.data.scan_history import ScanHistoryDB, ScanHistoryFilterOpts
+from smartscan.config import load_config
+
 
 async def main():
     if not os.path.exists(MINILM_MODEL_PATH):
@@ -24,6 +26,7 @@ async def main():
         raise ValueError(f"Image encoder model not found: {DINO_V2_SMALL_MODEL_PATH}")
 
 
+    config = load_config(SMARTSCAN_CONFIG_PATH)
     parser = argparse.ArgumentParser(description="CLI tool for comparing text or image embeddings and scanning directories.")
     subparsers = parser.add_subparsers(dest='command', required=True)
 
@@ -32,20 +35,20 @@ async def main():
     compare_group = compare_parser.add_mutually_exclusive_group(required=True)
     compare_group.add_argument("-f", "--file",nargs=2,metavar=("FILEPATH1", "FILEPATH2"),help="Compare two text or image files.")
     compare_group.add_argument("-d", "--dir",nargs=2,metavar=("FILEPATH", "DIRPATH"),help="Compare a file against a directory.")
-    compare_group.add_argument("-l", "--dirs",nargs=2,metavar=("FILEPATH", "DIRLISTFILE"),help="Compare a file against multiple directories listed in a file.")
+    compare_group.add_argument("-l", "--dirs",nargs=2, metavar=("FILEPATH", "DIRLISTFILE"),help="Compare a file against multiple directories listed in a file.")
 
     scan_parser = subparsers.add_parser("scan", help="Scan directories and auto organise files into directories.")
     scan_parser.add_argument("--n-frames",type=int, default=10,help="Number of frames to use when generating video embedding. Default is 10")
-    scan_parser.add_argument("-t", "--threshold",type=float,default=0.4,help="Similarity threshold for the scans. Default is 0.4.")
+    scan_parser.add_argument("-t", "--threshold",type=float,default=config.similarity_threshold,help="Similarity threshold for the scans. Default is 0.4.")
     scan_group = scan_parser.add_mutually_exclusive_group(required=True)
     scan_group.add_argument("dirlist_file", nargs="?", metavar="DIRLISTFILE", help="File listing target directories to scan.")
-    scan_group.add_argument("--dirs",nargs='+',metavar="DIRLIST", help="List of directories to scan.")
+    scan_group.add_argument("--dirs",nargs='+', default=config.target_dirs, metavar="DIRLIST", help="List of directories to scan.")
 
     index_parser = subparsers.add_parser("index", help="Index files from selected directories.")
     index_parser.add_argument("--n-frames",type=int, default=10,help="Number of frames to use when generating video embedding. Default is 10")
     index_group = index_parser.add_mutually_exclusive_group(required=True)
     index_group.add_argument("dirlist_file",nargs='?', metavar="DIRLISTFILE", help="File listing target directories to index.")
-    index_group.add_argument("--dirs",nargs='+',metavar="DIRLIST", help="List of directories to index.")
+    index_group.add_argument("--dirs",nargs='+', default=config.target_dirs, metavar="DIRLIST", help="List of directories to index.")
 
     restore_parser = subparsers.add_parser("restore", help="Restore files that were moved to their original location.")
     restore_parser.add_argument("--start-date",type=str,default=None,help="The start_date period of when to restore")
@@ -167,16 +170,16 @@ async def main():
         db = ScanHistoryDB(SCAN_HISTORY_DB)
 
         if args.file:
-            restore_files([args.file], db)
+            db.restore_files([args.file])
         elif args.files:
-            restore_files(args.files, db)
+            db.restore_files(args.files)
         elif args.start_date or args.end_date:
             scans = db.get(filter_opts=ScanHistoryFilterOpts(start_date=args.start_date, end_date=args.end_date))
             if not scans:
                 print(f"No scan history found matching dates")
                 return
             destination_files = set([scan['destination_file'] for scan in scans])
-            restore_files(destination_files, db)
+            db.restore_files(destination_files)
         
 
 if __name__ == "__main__":

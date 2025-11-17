@@ -1,7 +1,9 @@
 import sqlite3
+import os
+import shutil
 from datetime import datetime
 from dataclasses import dataclass, field
-import os
+
 
 @dataclass
 class ScanHistory:
@@ -137,3 +139,21 @@ class ScanHistoryDB:
         row = cursor.fetchone()
         connection.close()
         return row[0] if row else None
+    
+    def restore_files(self, destination_files: list[str]):
+        restore_failed = []
+        restored_count = 0
+        for dest in destination_files:
+            original = self.get_original_source(dest)
+            if original:
+                try:
+                    shutil.move(dest, original)
+                    restored_count += 1
+                except Exception:
+                    restore_failed.append(dest)
+            else:
+                restore_failed.append(dest)
+        print(f"{restored_count} files restored successfully")
+        for invalid_file in restore_failed:
+            print(f"Failed to restore: {invalid_file}")
+

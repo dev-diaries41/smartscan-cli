@@ -4,9 +4,7 @@ import numpy as np
 import subprocess
 import numpy as np
 import re
-import shutil
 from pathlib import Path
-from smartscan.data.scan_history import ScanHistoryDB
 
 def read_text_file(filepath: str):
     with open(filepath, 'r', encoding='utf-8') as file:
@@ -148,20 +146,3 @@ def clear_prototype_files(dirs: list[str]):
     files = [file for file in get_files_from_dirs(dirs, allowed_exts=('.pkl')) if "prototype" in file]
     for file in files:
         os.remove(file)
-
-def restore_files(destination_files: list[str], db: ScanHistoryDB):
-    restore_failed = []
-    restored_count = 0
-    for dest in destination_files:
-        original = db.get_original_source(dest)
-        if original:
-            try:
-                shutil.move(dest, original)
-                restored_count += 1
-            except Exception:
-                restore_failed.append(dest)
-        else:
-            restore_failed.append(dest)
-    print(f"{restored_count} files restored successfully")
-    for invalid_file in restore_failed:
-        print(f"Failed to restore: {invalid_file}")
