@@ -131,7 +131,7 @@ async def main():
         file_analyser.similarity_threshold = args.threshold
        
         if args.dirlist_file:
-            target_dirs = load_dir_list(args.target_file)
+            target_dirs = load_dir_list(args.dirlist_file)
         else:
             target_dirs = args.dirs
 
