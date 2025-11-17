@@ -2,4 +2,4 @@
 
 BASE_DIR="$HOME/.smartscan"
 
-"$BASE_DIR/venv/bin/python" -m "$BASE_DIR/smartscan.main" "$@"
+PYTHONPATH="$BASE_DIR" "$BASE_DIR/venv/bin/python" -m smartscan.main "$@"
