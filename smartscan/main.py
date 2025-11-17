@@ -51,7 +51,7 @@ async def main():
     scan_parser = subparsers.add_parser("scan", help="Scan directories and auto organise files into directories.")
     scan_parser.add_argument("--n-frames",type=int, default=10,help="Number of frames to use when generating video embedding. Default is 10")
     scan_parser.add_argument("-t", "--threshold",type=float,default=config.similarity_threshold,help="Similarity threshold for the scans. Default is 0.4.")
-    scan_group = scan_parser.add_mutually_exclusive_group(required=True)
+    scan_group = scan_parser.add_mutually_exclusive_group()
     scan_group.add_argument("dirlist_file", nargs="?", type=existing_file, metavar="DIRLISTFILE", help="File listing target directories to scan.")
     scan_group.add_argument("--dirs",nargs='+', type=existing_dir,default=config.target_dirs, metavar="DIRLIST", help="List of directories to scan.")
 
@@ -115,6 +115,9 @@ async def main():
                 print(f"Directory: {key} | Similarity: {value}")
 
     elif args.command == "scan":
+        if not args.dirlist_file and not args.dirs:
+            scan_parser.error("one of DIRLISTFILE or --dirs must be provided")
+            
         file_analyser = FileAnalyser(
             image_encoder_path=image_encoder_path,
             text_encoder_path=text_encoder_path,
