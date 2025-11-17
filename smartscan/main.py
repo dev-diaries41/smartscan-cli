@@ -44,7 +44,7 @@ async def main():
     compare_parser.add_argument("file", default=10, type=existing_file,help="Source file to compare to")
     compare_group = compare_parser.add_mutually_exclusive_group(required=True)
     compare_group.add_argument("target_file", nargs="?",type=existing_file, metavar=("TARGETFILE"),help="Target file to be compared to source file.")
-    compare_group.add_argument("--dirs",nargs="+", type=existing_dir, default=config.target_dirs, metavar=("DIRLIST"),help="List of target directories to be compared to source file.")
+    compare_group.add_argument("--dirs",nargs="+", type=existing_dir, metavar=("DIRLIST"),help="List of target directories to be compared to source file.")
     compare_group.add_argument("--dirlist-file", type=existing_file,metavar=("DIRLISTFILE"),help="File listing target directories to be compared to source file.")
 
     scan_parser = subparsers.add_parser("scan", help="Scan directories and auto organise files into directories.")
