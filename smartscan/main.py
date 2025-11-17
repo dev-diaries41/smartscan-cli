@@ -4,6 +4,7 @@ import os
 import argparse
 import asyncio
 import chromadb
+import subprocess
 
 from smartscan.utils.file import load_dir_list, get_files_from_dirs, get_child_dirs
 from smartscan.constants import  SCAN_HISTORY_DB, DB_DIR, SMARTSCAN_CONFIG_PATH, MODEL_REGISTRY
@@ -48,12 +49,18 @@ async def main():
     compare_group.add_argument("--dirs",nargs="+", type=existing_dir, metavar=("DIRLIST"),help="List of target directories to be compared to source file.")
     compare_group.add_argument("--dirlist-file", type=existing_file,metavar=("DIRLISTFILE"),help="File listing target directories to be compared to source file.")
 
-    scan_parser = subparsers.add_parser("scan", help="Scan directories and auto organise files into directories.")
-    scan_parser.add_argument("--n-frames",type=int, default=10,help="Number of frames to use when generating video embedding. Default is 10")
-    scan_parser.add_argument("-t", "--threshold",type=float,default=config.similarity_threshold,help="Similarity threshold for the scans. Default is 0.4.")
-    scan_group = scan_parser.add_mutually_exclusive_group()
-    scan_group.add_argument("dirlist_file", nargs="?", type=existing_file, metavar="DIRLISTFILE", help="File listing target directories to scan.")
-    scan_group.add_argument("--dirs",nargs='+', type=existing_dir,default=config.target_dirs, metavar="DIRLIST", help="List of directories to scan.")
+    autosort_parser = subparsers.add_parser("autosort", help="Scan directories and auto organise files into directories.")
+    autosort_parser.add_argument("-t", "--threshold",type=float,default=config.similarity_threshold,help="Similarity threshold for the scans. Default is 0.7.")
+    autosort_parser.add_argument("--n-frames",type=int, default=10,help="Number of frames to use when generating video embedding. Default is 10")
+    autosort_group = autosort_parser.add_mutually_exclusive_group(required=True)
+    autosort_group.add_argument("dirlist_file", nargs="?", type=existing_file, metavar="DIRLISTFILE", help="File listing target directories to scan.")
+    autosort_group.add_argument("--dirs",nargs='+', type=existing_dir,default=config.target_dirs, metavar="DIRLIST", help="List of directories to scan.")
+
+    autosort_service_parser = subparsers.add_parser("autosort_service", help="Scan directories and auto organise files into directories.")
+    autosort_service_parser.add_argument("--setup",action="store_true",help="Setup systemd background service to auto-organise files")
+    autosort_service_parser.add_argument("--disable",action="store_true",help="Disable systemd background service to auto-organise files")
+    autosort_service_parser.add_argument("--enable",action="store_true",help="Enable systemd background service to auto-organise files")
+    autosort_service_parser.add_argument("--logs",action="store_true",help="View systemd service logs")
 
     index_parser = subparsers.add_parser("index", help="Index files from selected directories.")
     index_parser.add_argument("--n-frames",type=int, default=10,help="Number of frames to use when generating video embedding. Default is 10")
@@ -114,10 +121,7 @@ async def main():
             for (key, value) in sorted(dirs_similarities.items(), key=lambda x: x[1], reverse=True):
                 print(f"Directory: {key} | Similarity: {value}")
 
-    elif args.command == "scan":
-        if not args.dirlist_file and not args.dirs:
-            scan_parser.error("one of DIRLISTFILE or --dirs must be provided")
-            
+    elif args.command == "autosort":
         file_analyser = FileAnalyser(
             image_encoder_path=image_encoder_path,
             text_encoder_path=text_encoder_path,
@@ -143,6 +147,16 @@ async def main():
         files = get_files_from_dirs(target_dirs, allowed_exts=allowed_exts)
         result = await file_scanner.run(files)
         print(f"Scan results - files moved: {result.total_processed} | time elpased: {result.time_elapsed:.2f}s")
+
+    elif args.command == "autosort_service":
+        if args.setup:
+            subprocess.run(['./systemd.sh', 'setup'])
+        elif args.enable:
+            subprocess.run(['./systemd.sh', 'enable'])
+        elif args.disable:
+            subprocess.run(['./systemd.sh', 'disable'])
+        elif args.logs:
+            subprocess.run(['./systemd.sh', 'logs'])
     
     elif args.command == "index":
         indexer = FileIndexer(
