@@ -49,7 +49,6 @@ class FileIndexerWebSocketListener(ProcessorListener[str, tuple[str, np.ndarray]
         })
 
     async def on_complete(self, result):
-        self.progress_bar.close()
         await self.ws.send_json({
             "type": "complete",
             "total_processed": result.total_processed,
