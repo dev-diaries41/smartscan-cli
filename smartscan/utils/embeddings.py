@@ -1,7 +1,15 @@
 
 import numpy as np
-from smartscan.utils.file import get_frames_from_video
 from PIL import Image
+
+from smartscan.utils.file import get_frames_from_video
+from smartscan.ml.providers.embeddings.minilm.text import MiniLmTextEmbedder
+from smartscan.ml.providers.embeddings.dino.image import DinoSmallV2ImageEmbedder
+from smartscan.ml.providers.embeddings.clip.text import ClipTextEmbedder
+from smartscan.ml.providers.embeddings.clip.image import ClipImageEmbedder
+from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider
+from smartscan.constants import CLIP_IMAGE_MODEL_PATH, DINO_V2_SMALL_MODEL_PATH, CLIP_TEXT_MODEL_PATH, MINILM_MODEL_PATH
+
 
 def generate_prototype_embedding(embeddings) -> np.ndarray:    
     embeddings_tensor = np.stack(embeddings, axis=0)
@@ -38,7 +46,21 @@ def chunk_text(s: str, tokenizer_max_length: int, limit: int = 10):
 
     return chunks
 
-    
+
+def get_image_encoder(path: str) -> ImageEmbeddingProvider:
+    if path == DINO_V2_SMALL_MODEL_PATH:
+        return DinoSmallV2ImageEmbedder(path)
+    elif path == CLIP_IMAGE_MODEL_PATH:
+        return ClipImageEmbedder(path)
+    raise ValueError(f"Invalid model path: {path}")
+
+def get_text_encoder(path: str) -> TextEmbeddingProvider:
+    if path == MINILM_MODEL_PATH:
+        return MiniLmTextEmbedder(path)
+    elif path == CLIP_TEXT_MODEL_PATH:
+        return ClipTextEmbedder(path)
+    raise ValueError(f"Invalid model path: {path}")
+
     
 
 
