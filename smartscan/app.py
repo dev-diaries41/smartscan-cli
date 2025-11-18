@@ -1,6 +1,5 @@
 import chromadb
 from PIL import Image
-
 from pydantic import BaseModel
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException,  WebSocket, WebSocketDisconnect
@@ -53,8 +52,7 @@ app.add_middleware(
     max_age=3600,
 )
 
-@app.post("/api/search/image")
-async def search_images(query_image: UploadFile = File(...),threshold: float = Form(0.6),):
+async def _image_query(store: chromadb.Collection, query_image: UploadFile = File(...), threshold: float = Form(0.6)):
     if query_image.filename is None:
         raise HTTPException(status_code=400, detail="Missing query_image")
     if not are_valid_files(ALLOWED_EXT, [query_image.filename]):
@@ -68,7 +66,7 @@ async def search_images(query_image: UploadFile = File(...),threshold: float = F
             raise HTTPException(status_code=500, detail="Error generating embedding")
 
     try:
-          results = image_store.query(query_embeddings=[query_embedding])
+          results = store.query(query_embeddings=[query_embedding])
     except Exception as _:
             raise HTTPException(status_code=500, detail="Error querying database")
 
@@ -77,36 +75,22 @@ async def search_images(query_image: UploadFile = File(...),threshold: float = F
     return JSONResponse({"results": ids})
 
 
+@app.post("/api/search/image")
+async def search_images(query_image: UploadFile = File(...),threshold: float = Form(0.6),):
+    return await _image_query(image_store, query_image, threshold)
+
+
 @app.post("/api/search/video")
 async def search_videos(query_image: UploadFile = File(...),threshold: float = Form(0.6),):
-    if query_image.filename is None:
-        raise HTTPException(status_code=400, detail="Missing query_image")
-    if not are_valid_files(ALLOWED_EXT, [query_image.filename]):
-        raise HTTPException(status_code=400, detail="Unsupported file type")
-
-    try:
-        image = Image.open(query_image.file)
-        query_embedding = await run_in_threadpool(image_encoder.embed, image)
-
-    except Exception as _:
-            raise HTTPException(status_code=500, detail="Error generating embedding")
-
-    try:
-          results = video_store.query(query_embeddings=[query_embedding])
-    except Exception as _:
-            raise HTTPException(status_code=500, detail="Error querying database")
-
-    ids = [id_ for id_, distance in zip(results['ids'][0], results['distances'][0]) if distance <= threshold]
-
-    return JSONResponse({"results": ids})
+    return await _image_query(video_store, query_image, threshold)
 
 
-class DocuementSearchRequest(BaseModel):
+class TextQueryRequest(BaseModel):
     query: str
     threshold: float = 0.6
 
-@app.post("/api/search/text")
-async def search_documents(request: DocuementSearchRequest):
+
+async def _text_query(request: TextQueryRequest, store: chromadb.Collection):
     if request.query is None:
         raise HTTPException(status_code=400, detail="Missing query text")
   
@@ -116,14 +100,18 @@ async def search_documents(request: DocuementSearchRequest):
             raise HTTPException(status_code=500, detail="Error generating embedding")
 
     try:
-          results = text_store.query(query_embeddings=[query_embedding])
+          results = store.query(query_embeddings=[query_embedding])
     except Exception as _:
             raise HTTPException(status_code=500, detail="Error querying database")
-
 
     ids = [id_ for id_, distance in zip(results['ids'][0], results['distances'][0]) if distance <= request.threshold]
 
     return JSONResponse({"results": ids})
+
+
+@app.post("/api/search/text")
+async def search_documents(request: TextQueryRequest):
+    return await _text_query(request, text_store)
 
 
 @app.websocket("/ws/index")
@@ -153,3 +141,22 @@ async def index(ws: WebSocket):
     except WebSocketDisconnect:
         print("Client disconnected")
 
+
+async def _count(store: chromadb.Collection):
+    try:
+        count = await run_in_threadpool(store.count)
+    except Exception as _:
+            raise HTTPException(status_code=500, detail="Error counting items in collection")
+    return JSONResponse({"count": count})
+
+@app.get("/api/collections/text/count")
+async def count_documents_collection():
+    return await _count(text_store)
+
+@app.get("/api/collections/image/count")
+async def count_image_collection():
+    return await _count(image_store)
+
+@app.get("/api/collections/video/count")
+async def count_video_collection():
+      return await _count(video_store)
