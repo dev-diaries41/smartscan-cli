@@ -9,7 +9,7 @@ from smartscan.processor.processor import BatchProcessor
 from smartscan.data.scan_history import ScanHistoryDB, ScanHistory
 
 
-class FileScanner(BatchProcessor[str, tuple[str, str]]):
+class FileScanner(BatchProcessor[str, tuple[str, float]]):
     def __init__(self, 
                  analyser: FileAnalyser,
                  destination_dirs: List[str],
@@ -22,26 +22,22 @@ class FileScanner(BatchProcessor[str, tuple[str, str]]):
         self.scan_history_db = ScanHistoryDB(db_path)
 
     def on_process(self, item):
-        source_file = item
-
-        if not os.path.isfile(source_file):
-            raise ValueError(f"Invalid file: {source_file}")
+        if not os.path.isfile(item):
+            raise ValueError(f"Invalid file: {item}")
         
-        dir_similarities_dict = self.analyser.compare_file_to_dirs(source_file, self.destination_dirs)
-        dir_similarities = sorted(dir_similarities_dict.items(), key=lambda x: x[1], reverse=True)
-        destination_dir, best_similarity = dir_similarities[0]
+        destination_dir, best_similarity = self.analyser.compare_file_to_dirs(item, self.destination_dirs)
         
         if best_similarity <= self.analyser.similarity_threshold:
             raise ValueError("Below threshold")
 
-        new_path = shutil.move(source_file, destination_dir)
-        
-        return source_file, str(new_path)
+        return destination_dir, best_similarity
              
     
     async def on_batch_complete(self, batch):
-        scans = [ScanHistory(scan_id=str(uuid.uuid4()), file_id=self._hash_string(move_info[0]), source_file=move_info[0], destination_file=move_info[1]) for move_info in batch]
-        self.scan_history_db.add(scans)
+        # TODO store assigned class ids
+        pass
+        # scans = [ScanHistory(scan_id=str(uuid.uuid4()), file_id=self._hash_string(move_info[0]), source_file=move_info[0], destination_file=move_info[1]) for move_info in batch]
+        # self.scan_history_db.add(scans)
     
     @staticmethod
     def _hash_string(s: str) -> str:
