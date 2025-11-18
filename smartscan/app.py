@@ -1,6 +1,8 @@
 import chromadb
 from PIL import Image
 
+from pydantic import BaseModel
+
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException,  WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -70,10 +72,7 @@ async def search_images(query_image: UploadFile = File(...),threshold: float = F
     except Exception as _:
             raise HTTPException(status_code=500, detail="Error querying database")
 
-    ids = []
-    for id_, distance in zip(results['ids'][0], results['distances'][0]):
-        if distance <= threshold:
-            ids.append(id_)
+    ids = [id_ for id_, distance in zip(results['ids'][0], results['distances'][0]) if distance <= threshold]
     
     return JSONResponse({"results": ids})
 
@@ -97,22 +96,22 @@ async def search_videos(query_image: UploadFile = File(...),threshold: float = F
     except Exception as _:
             raise HTTPException(status_code=500, detail="Error querying database")
 
-    ids = []
-    for id_, distance in zip(results['ids'][0], results['distances'][0]):
-        if distance <= threshold:
-            ids.append(id_)
-    
+    ids = [id_ for id_, distance in zip(results['ids'][0], results['distances'][0]) if distance <= threshold]
+
     return JSONResponse({"results": ids})
 
 
+class DocuementSearchRequest(BaseModel):
+    query: str
+    threshold: float = 0.6
+
 @app.post("/api/search/text")
-async def search_documents(query: str, threshold: float = Form(0.6),):
-    if query is None:
+async def search_documents(request: DocuementSearchRequest):
+    if request.query is None:
         raise HTTPException(status_code=400, detail="Missing query text")
   
     try:
-        query_embedding = await run_in_threadpool(text_encoder.embed, query)
-
+        query_embedding = await run_in_threadpool(text_encoder.embed, request.query)
     except Exception as _:
             raise HTTPException(status_code=500, detail="Error generating embedding")
 
@@ -121,11 +120,9 @@ async def search_documents(query: str, threshold: float = Form(0.6),):
     except Exception as _:
             raise HTTPException(status_code=500, detail="Error querying database")
 
-    ids = []
-    for id_, distance in zip(results['ids'][0], results['distances'][0]):
-        if distance <= threshold:
-            ids.append(id_)
-    
+
+    ids = [id_ for id_, distance in zip(results['ids'][0], results['distances'][0]) if distance <= request.threshold]
+
     return JSONResponse({"results": ids})
 
 
@@ -155,3 +152,4 @@ async def index(ws: WebSocket):
                 break
     except WebSocketDisconnect:
         print("Client disconnected")
+
