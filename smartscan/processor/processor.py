@@ -103,7 +103,6 @@ class BatchProcessor(ABC, Generic[Input, Output]):
     def on_process(self, item: Input) -> Output:
         pass 
 
-    # Could even IO operations
     @abstractmethod
     async def on_batch_complete(self, batch: list[Output]):
         pass 
