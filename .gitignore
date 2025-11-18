@@ -5,3 +5,4 @@ venv/
 smartscan.conf
 db
 smartscan.json
+smartscan.egg-info
