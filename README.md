@@ -1,8 +1,8 @@
-# SmartScan-Py
+# SmartScan Server
 
 ## Overview
 
-SmartScan-Py is a Python tool for automated file management and search (desktop app integration coming soon) based on semantic similarity. It supports multiple embedding providers for generating embeddings and is the Python implementation of the [SmartScan Android app](https://github.com/dev-diaries41/smartscan).
+Standalone CLI tool and server to power the SmartScan Desktop app (coming soon), providing automated file management and semantic search functionality.
 
 ## Features
 
@@ -11,9 +11,8 @@ SmartScan-Py is a Python tool for automated file management and search (desktop 
 * Compare files or directories to determine semantic similarity.
 * Automatically organize files based on similarity thresholds.
 * Restore files to original location after unintended moves.
-* Auto-organize files daily using systemd.
-
-> **Caution:** Use high thresholds (e.g., 0.7+) for automatic organization to avoid undesired moves. The `restore` command can revert moves.
+* Auto-organize files daily using systemd (autosort).
+* Supports multiple embedding providers.
 
 ---
 
@@ -28,8 +27,8 @@ SmartScan-Py is a Python tool for automated file management and search (desktop 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/dev-diaries41/smartscan-py.git
-   cd smartscan-py
+   git clone https://github.com/smartscanapp/smartscan-server.git
+   cd smartscan-server
    ```
 2. Set executable permissions for the install script:
 
@@ -48,7 +47,9 @@ SmartScan-Py is a Python tool for automated file management and search (desktop 
 
 ## Usage
 
-SmartScan-Py supports four main commands: `compare`, `scan`, `index`, and `restore`.
+> **Caution:** Use high thresholds (e.g., 0.7+) for `autosort` to avoid undesired moves. The `restore` command can revert moves.
+
+SmartScan-Py supports five main commands: `compare`, `autosort`, `autosort_service`, `index`, and `restore`.
 
 ### Supported File Types
 
@@ -63,67 +64,77 @@ SmartScan-Py supports four main commands: `compare`, `scan`, `index`, and `resto
 Compare files or directories to measure semantic similarity.
 
 ```bash
-smartscan compare [OPTIONS]
+smartscan compare [OPTIONS] <FILE> [TARGETFILE]
 ```
 
-Modes:
+Options:
 
-1. **File-to-File**
-
-   ```bash
-   smartscan compare <FILEPATH> <TARGETFILE>
-   ```
-
-   Compare two files.
-
-2a. **File-to-Multiple Directories (inline list)**
-
-   ```bash
-   smartscan compare <FILEPATH> --dirs DIR1 DIR2 DIR3
-   ```
-
-   Compare a file against multiple directories inline.
-
-2b. **File-to-Multiple Directories (from file)**
-
-   ```bash
-   smartscan compare <FILEPATH> --dirlist-file <DIRLISTFILE>
-   ```
-
-   Compare a file against multiple directories listed in a file (one per line).
-
----
-
-## Scan Command
-
-Scan directories and automatically organize files.
-
-```bash
-smartscan scan [DIRLISTFILE or --dirs DIRS...] [-t THRESHOLD]
-```
-
-* `DIRLISTFILE` – text file listing directories to scan.
-* `--dirs DIRS...` – alternatively, list directories directly.
-* `-t, --threshold` – similarity threshold (default: `0.4`).
+* `--dirs DIR1 DIR2 ...` – Compare file against multiple directories.
+* `--dirlist-file FILE` – Compare file against directories listed in a file.
+* `--n-frames N` – Number of frames for video embeddings (default 10).
+* `--clear-dir-prototypes DIRS...` – Clear prototype embeddings for directories.
 
 Example:
 
 ```bash
-smartscan scan target_dirs.txt -t 0.8
-smartscan scan --dirs /path/one /path/two -t 0.7
+smartscan compare myfile.txt targetfile.txt
+smartscan compare myfile.txt --dirs /dir1 /dir2
+smartscan compare myfile.txt --dirlist-file target_dirs.txt
 ```
+
+---
+
+## Autosort Command
+
+Scan directories and automatically organize files.
+
+```bash
+smartscan autosort [OPTIONS] DIRLISTFILE
+```
+
+Options:
+
+* `--dirs DIR1 DIR2 ...` – List of directories to scan instead of using a file.
+* `-t, --threshold FLOAT` – Similarity threshold (default: 0.7).
+* `--n-frames N` – Number of frames for video embeddings (default: 10).
+* `--clear-dir-prototypes DIRS...` – Clear prototype embeddings for directories.
+
+Example:
+
+```bash
+smartscan autosort target_dirs.txt -t 0.8
+smartscan autosort --dirs /path/one /path/two -t 0.7
+```
+
+---
+
+## Autosort Service Command
+
+Manage systemd background service for daily auto-organization:
+
+```bash
+smartscan autosort_service [--setup | --enable | --disable | --logs]
+```
+
+* `--setup` – Setup systemd service.
+* `--enable` – Enable systemd service.
+* `--disable` – Disable systemd service.
+* `--logs` – View systemd logs.
 
 ---
 
 ## Index Command
 
-Index files from selected directories for faster future comparisons.
+Index files for faster future comparisons.
 
 ```bash
-smartscan index [DIRLISTFILE or --dirs DIRS...] [--n-frames N]
+smartscan index [OPTIONS] DIRLISTFILE
 ```
 
-* `--n-frames` – number of frames to use for video embeddings (default: `10`).
+Options:
+
+* `--dirs DIR1 DIR2 ...` – List directories to index.
+* `--n-frames N` – Number of frames for video embeddings (default 10).
 
 Example:
 
@@ -144,9 +155,9 @@ smartscan restore [OPTIONS]
 
 Options:
 
-* `FILE` – single file to restore.
-* `--files FILES...` – list of files to restore.
-* `--start-date DATE` / `--end-date DATE` – restore files moved during a date range.
+* `FILE` – Single file to restore.
+* `--files FILE1 FILE2 ...` – Multiple files to restore.
+* `--start-date DATE` / `--end-date DATE` – Restore files moved within a date range.
 
 Example:
 
@@ -160,20 +171,21 @@ smartscan restore --start-date 2025-01-01 --end-date 2025-01-15
 
 ## Systemd Integration for Daily Scans
 
-1. **Create SmartScan configuration** at `$HOME/.smartscan/smartscan.conf`:
+1. Create SmartScan configuration at `$HOME/.smartscan/smartscan.json`:
 
 ```bash
-TARGET_FILE=/path/to/target_dirs.txt
-THRESHOLD=0.7
+{
+    "similarity_threshold": 0.7,
+    "target_dirs": ["/path/target-dir-one", "/path/target-dir-two"],
+    "image_encoder_model": "dino",
+    "text_encoder_model": "minilm"
+}
 ```
 
-2. **Run setup script**:
+2. Run setup command:
 
 ```bash
-chmod 777 setup_systemd.sh
-./setup_systemd.sh
+smartscan autosort_service --setup 
 ```
 
 3. Adjust the schedule by editing `$HOME/.smartscan/systemd/smartscan.timer`.
-
----
