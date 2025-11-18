@@ -49,7 +49,7 @@ Standalone CLI tool and server to power the SmartScan Desktop app (coming soon),
 
 > **Caution:** Use high thresholds (e.g., 0.7+) for `autosort` to avoid undesired moves. The `restore` command can revert moves.
 
-SmartScan-Py supports five main commands: `compare`, `autosort`, `autosort_service`, `index`, and `restore`.
+Five main commands: `compare`, `autosort`, `autosort_service`, `index`, and `restore`.
 
 ### Supported File Types
 
