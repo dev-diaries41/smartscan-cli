@@ -2,26 +2,13 @@ import time
 import asyncio
 from asyncio import Semaphore
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
-from pydantic import BaseModel
+from typing import Generic
 
 from smartscan.processor.processor_listener import ProcessorListener
 from smartscan.processor.memory import MemoryManager
 from smartscan.utils.async_utils import AtomicInteger
+from smartscan.processor.types import  Input, Output, MetricsFailure, MetricsSuccess
 
-Input = TypeVar("Input")
-Output = TypeVar("Output")
-
-
-class MetricsSuccess(BaseModel):
-    total_processed: int = 0
-    time_elapsed: float = 0.0
-
-class MetricsFailure(BaseModel):
-    total_processed: int
-    time_elapsed: float
-    error: Exception
-    
 
 class BatchProcessor(ABC, Generic[Input, Output]):
     def __init__(self,
