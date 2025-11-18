@@ -4,8 +4,8 @@ from PIL import Image
 
 from smartscan.utils.file import get_frames_from_video
 
-
-def generate_prototype_embedding(embeddings) -> np.ndarray:    
+# embeddings (b, dim)
+def generate_prototype_embedding(embeddings: np.ndarray) -> np.ndarray:    
     embeddings_tensor = np.stack(embeddings, axis=0)
     prototype = np.mean(embeddings_tensor, axis=0)
     prototype /= np.linalg.norm(prototype)
