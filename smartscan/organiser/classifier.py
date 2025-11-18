@@ -14,7 +14,7 @@ class ClassificationResult:
     class_id: str
     similarity: float
 
-class FileScanner(BatchProcessor[str, ClassificationResult]):
+class FileClassifier(BatchProcessor[str, ClassificationResult]):
     def __init__(self, 
                  analyser: FileAnalyser,
                  destination_dirs: List[str],
