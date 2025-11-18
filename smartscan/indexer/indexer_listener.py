@@ -43,7 +43,7 @@ class FileIndexerWebSocketListener(ProcessorListener[str, tuple[str, np.ndarray]
 
     async def on_error(self, e, item):
         await self.ws.send_json({
-            "type": "fail",
+            "type": "error",
             "error": str(e),
             "item": item
         })
