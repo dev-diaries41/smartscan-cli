@@ -6,13 +6,24 @@ Standalone CLI tool and server to power the SmartScan Desktop app (coming soon),
 
 ## Features
 
-* Supports text, image, and video files.
-* Index files in target directories.
-* Compare files or directories to determine semantic similarity.
-* Automatically organize files based on similarity thresholds.
-* Restore files to original location after unintended moves.
-* Auto-organize files daily using systemd (autosort).
-* Supports multiple embedding providers.
+**Server**
+
+* Run server exposing search and indexing functionality
+
+**Indexing & Search**
+
+* Index files in target directories
+* Supports multiple embedding providers
+
+**Auto-Sort**
+
+* Automatically organize files based on similarity thresholds
+* Restore files to original location after unintended moves
+* Auto-organize files daily using systemd (scheduling)
+
+**File Type Support**
+
+* Supports text, image, and video files
 
 ---
 
@@ -45,7 +56,22 @@ Standalone CLI tool and server to power the SmartScan Desktop app (coming soon),
 
 ---
 
-## Usage
+## Server Usage
+
+The server is designed to run locally for usage with the SmartScan Desktop app.
+
+### Start server
+
+```bash
+smartscan --server [OPTIONS]
+```
+
+Options:
+
+* `[--port, -p] PORT` – Port to start server (default 8000).
+* `[--workers, -w] WORKERS` – Mumber of workers (default 0).
+
+## CLI Usage
 
 > **Caution:** Use high thresholds (e.g., 0.7+) for `autosort` to avoid undesired moves. The `restore` command can revert moves.
 
