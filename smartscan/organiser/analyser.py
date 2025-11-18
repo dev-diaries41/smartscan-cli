@@ -9,7 +9,7 @@ from PIL import Image
 from chromadb import Collection
 
 from smartscan.utils.file import get_days_since_last_modified, get_files_from_dirs, read_text_file, are_valid_files
-from smartscan.utils.embeddings import generate_prototype_embedding, embed_video, chunk_text
+from smartscan.utils.embeddings import generate_prototype_embedding, embed_video, chunk_text, few_shot_classification
 from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider
 
 class AnalyserMode(IntEnum):
@@ -61,26 +61,26 @@ class FileAnalyser:
         prototype_embedding = self._get_prototype(dirpath, mode)
         return np.dot(file_embedding, prototype_embedding)
 
-    def compare_file_to_dirs(self, filepath: str, dirpaths: List[str]) -> dict[str, float]:
+    def compare_file_to_dirs(self, filepath: str, dirpaths: List[str]) -> tuple[str, float]:
             """
             Compute the cosine similarities between a file and multiple directories, and return
-            a directory to similarity dict.
+            best match.
             """
-
-            dirs_similarities: dict[str, float] = {}
             mode = self._get_mode([filepath])
             file_embedding = self._get_or_embed(filepath, mode)
+            class_prototypes = self._get_class_prototypes(dirpaths, mode)
+            return few_shot_classification(file_embedding, class_prototypes)
+    
+    def _get_class_prototypes(self, dirpaths: list[str], mode: AnalyserMode) -> list[tuple[str, np.ndarray]]:
+        class_prototypes: list[tuple[str, np.ndarray]] = []
+        for dirpath in dirpaths:
+            try:
+                class_prototypes.append((dirpath, self._get_prototype(dirpath, mode)))
+            except:
+                continue
 
-            for dirpath in dirpaths:
-                try:
-                    prototype_embedding = self._get_prototype(dirpath, mode)
-                    similarity = np.dot(file_embedding, prototype_embedding)
-                except Exception as e:
-                    print(f"[WARNING] Error comparing embeddings for directory {dirpath}: {e}")
-                    continue
-                dirs_similarities[dirpath] = similarity
+        return class_prototypes
 
-            return dirs_similarities
     
     @staticmethod
     def save_embedding(filepath: str, embedding: np.ndarray):
