@@ -1,13 +1,11 @@
 import os
-import uuid
 import hashlib
-import shutil
 from typing import List
 from dataclasses import dataclass
 
 from smartscan.organiser.analyser import FileAnalyser
 from smartscan.processor.processor import BatchProcessor
-from smartscan.data.scan_history import ScanHistoryDB, ScanHistory
+from smartscan.processor.processor_listener import ProcessorListener
 
 
 @dataclass
@@ -20,13 +18,12 @@ class FileScanner(BatchProcessor[str, ClassificationResult]):
     def __init__(self, 
                  analyser: FileAnalyser,
                  destination_dirs: List[str],
-                 db_path: str,
+                 listener = ProcessorListener[str, ClassificationResult],
                  **kwargs
                  ):
-        super().__init__(**kwargs)
+        super().__init__(listener=listener, **kwargs)
         self.analyser = analyser
         self.destination_dirs = destination_dirs
-        self.scan_history_db = ScanHistoryDB(db_path)
 
     def on_process(self, item):
         if not os.path.isfile(item):
@@ -41,11 +38,7 @@ class FileScanner(BatchProcessor[str, ClassificationResult]):
              
     
     async def on_batch_complete(self, batch):
-        # TODO store assigned class ids
-        pass
-        # scans = [ScanHistory(scan_id=str(uuid.uuid4()), file_id=self._hash_string(move_info[0]), source_file=move_info[0], destination_file=move_info[1]) for move_info in batch]
-        # self.scan_history_db.add(scans)
-        print(batch)
+        self.listener.on_batch_complete(batch)
     
     @staticmethod
     def _hash_string(s: str) -> str:
