@@ -9,8 +9,8 @@ import subprocess
 from smartscan.utils.file import load_dir_list, get_files_from_dirs, get_child_dirs,clear_prototype_files
 from smartscan.constants import  SCAN_HISTORY_DB, DB_DIR, SMARTSCAN_CONFIG_PATH, MODEL_REGISTRY
 from smartscan.organiser.analyser import FileAnalyser
-from smartscan.organiser.scanner import FileScanner
-from smartscan.organiser.scanner_listener import FileScannerListener
+from smartscan.organiser.classifier import FileClassifier
+from smartscan.organiser.classifier_listener import FileClassifierListener
 from smartscan.indexer.indexer import FileIndexer
 from smartscan.indexer.indexer_listener import FileIndexerListener
 from smartscan.data.scan_history import ScanHistoryDB, ScanHistoryFilterOpts
@@ -123,10 +123,8 @@ async def cli():
                 dirpaths = load_dir_list(args.dirlist_file)
             else:
                 dirpaths = args.dirs
-            dirs_similarities = file_analyser.compare_file_to_dirs(source_filepath, dirpaths)
-            print(f"File-to-directories similarity\n--------------------------\n")
-            for (key, value) in sorted(dirs_similarities.items(), key=lambda x: x[1], reverse=True):
-                print(f"Directory: {key} | Similarity: {value}")
+            best_dir, best_sim = file_analyser.compare_file_to_dirs(source_filepath, dirpaths)
+            print(f"Best Directory: {best_dir} | Similarity: {best_sim}")
 
     elif args.command == "autosort":
         if args.clear_dir_prototypes:
@@ -152,7 +150,7 @@ async def cli():
         file_analyser.image_encoder.init()
         file_analyser.text_encoder.init()
 
-        file_scanner = FileScanner(analyser=file_analyser, destination_dirs=get_child_dirs(target_dirs), db_path=SCAN_HISTORY_DB , listener = FileScannerListener())
+        file_scanner = FileClassifier(analyser=file_analyser, destination_dirs=get_child_dirs(target_dirs), db_path=SCAN_HISTORY_DB , listener = FileClassifierListener())
         allowed_exts = file_analyser.valid_img_exts + file_analyser.valid_txt_exts + file_analyser.valid_vid_exts
         files = get_files_from_dirs(target_dirs, allowed_exts=allowed_exts)
         result = await file_scanner.run(files)

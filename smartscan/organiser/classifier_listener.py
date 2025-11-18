@@ -1,9 +1,10 @@
 from tqdm import tqdm
 
 from smartscan.processor.processor_listener import ProcessorListener
+from smartscan.organiser.classifier import ClassificationResult
 
 #  Placeholder for dev
-class FileScannerListener(ProcessorListener[str, tuple[str, str]]):
+class FileClassifierListener(ProcessorListener[str, ClassificationResult]):
     def __init__(self):
         self.progress_bar = tqdm(total=100, desc="Scanning")
 
