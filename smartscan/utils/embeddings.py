@@ -31,7 +31,7 @@ def few_shot_classification(item_embedding:  np.ndarray, class_prototypes: list[
                 similarity = np.dot(item_embedding, prototype_embedding)
             except Exception as e:
                 continue
-            class_similarities[class_id] = similarity
+            class_similarities_dict[class_id] = similarity
 
         class_similarities = sorted(class_similarities_dict.items(), key=lambda x: x[1], reverse=True)        
         return class_similarities[0]
