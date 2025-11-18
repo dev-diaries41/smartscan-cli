@@ -9,14 +9,7 @@ from pathlib import Path
 def read_text_file(filepath: str):
     with open(filepath, 'r', encoding='utf-8') as file:
         return file.read()       
-  
 
-def load_dir_list(dirlist_file):
-    """Read the list of directory paths from the provided text file."""
-    with open(dirlist_file, "r") as f:
-        dirs = [line.strip() for line in f if line.strip() and os.path.isdir(line.strip())]
-    return dirs
-    
 
 def get_days_since_last_modified(file_path: str) -> int:
     last_modified_timestamp = os.path.getmtime(file_path)    
@@ -132,11 +125,6 @@ def get_frames_from_video(video_path: str, n_frames: int):
     proc.wait()
     return frames
 
-def clear_prototype_files(dirs: list[str]):
-    files = [file for file in get_files_from_dirs(dirs, allowed_exts=('.pkl')) if "prototype" in file]
-    for file in files:
-        os.remove(file)
-        print(f"Successfully deleted prototype: {file}")
 
 def are_valid_files(allowed_exts: list[str], files: list[str]) -> bool:
     return all(path.lower().endswith(allowed_exts) for path in files)
