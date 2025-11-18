@@ -3,8 +3,8 @@ from PIL import Image
 from chromadb import Collection
 
 from smartscan.processor.processor import BatchProcessor
-from smartscan.utils.file import read_text_file
-from smartscan.utils.embeddings import embed_video, get_text_encoder, get_image_encoder
+from smartscan.utils.file import read_text_file, are_valid_files
+from smartscan.utils.embeddings import embed_video
 from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider
 
 
@@ -31,9 +31,9 @@ class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
 
     def on_process(self, item):
             filepath = item
-            is_image_file = self._are_files_valid(self.valid_img_exts, [filepath])
-            is_text_file = self._are_files_valid(self.valid_txt_exts, [filepath])
-            is_video_file = self._are_files_valid(self.valid_vid_exts, [filepath])
+            is_image_file = are_valid_files(self.valid_img_exts, [filepath])
+            is_text_file = are_valid_files(self.valid_txt_exts, [filepath])
+            is_video_file = are_valid_files(self.valid_vid_exts, [filepath])
 
             if is_image_file:
                 embedder = self.image_encoder 
@@ -56,9 +56,9 @@ class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
         partitions = { "image": ([], []), "text": ([], []), "video": ([], [])}
 
         for id_, embed in batch:
-            is_image_file = self._are_files_valid(self.valid_img_exts, [id_])
-            is_text_file = self._are_files_valid(self.valid_txt_exts, [id_])
-            is_video_file = self._are_files_valid(self.valid_vid_exts, [id_])
+            is_image_file = are_valid_files(self.valid_img_exts, [id_])
+            is_text_file = are_valid_files(self.valid_txt_exts, [id_])
+            is_video_file = are_valid_files(self.valid_vid_exts, [id_])
 
             if is_image_file:
                 partitions['image'][0].append(id_)
@@ -83,10 +83,7 @@ class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
         video_ids = self._get_exisiting_ids(self.video_store)
         exclude = set(image_ids) | set(text_ids) | set(video_ids)
         return [item for item in items if item not in exclude]
-       
-    def _are_files_valid(self, allowed_exts: list[str], files: list[str]) -> bool:
-        return all(path.lower().endswith(allowed_exts) for path in files)
-
+  
     def _get_exisiting_ids(self, store: Collection) -> list:
         limit = 100
         offset = 0

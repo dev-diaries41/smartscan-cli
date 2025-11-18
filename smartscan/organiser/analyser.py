@@ -8,8 +8,8 @@ from enum import IntEnum
 from PIL import Image
 from chromadb import Collection
 
-from smartscan.utils.file import get_days_since_last_modified, get_files_from_dirs, read_text_file
-from smartscan.utils.embeddings import generate_prototype_embedding, embed_video, chunk_text, get_image_encoder, get_text_encoder
+from smartscan.utils.file import get_days_since_last_modified, get_files_from_dirs, read_text_file, are_valid_files
+from smartscan.utils.embeddings import generate_prototype_embedding, embed_video, chunk_text
 from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider
 
 class AnalyserMode(IntEnum):
@@ -124,10 +124,7 @@ class FileAnalyser:
 
     def _is_prototype_stale(self, path: str) -> bool:
         return get_days_since_last_modified(path) > self.refresh_prototype_duration
-    
-    def _are_files_valid(self, allowed_exts: list[str], files: list[str]) -> bool:
-        return all(path.lower().endswith(allowed_exts) for path in files)
-    
+
     def _get_prototype_path(self, dirpath, mode: AnalyserMode):
         # This allows generating seperate prototypes for dirs which may have mutliple file types e.g Downloads
         if mode == AnalyserMode.IMAGE:
@@ -153,9 +150,9 @@ class FileAnalyser:
         return prototype_embedding
     
     def _get_mode(self, files: str) -> AnalyserMode:
-        is_image_mode = self._are_files_valid(self.valid_img_exts, files)
-        is_text_mode = self._are_files_valid(self.valid_txt_exts, files)
-        is_video_mode = self._are_files_valid(self.valid_vid_exts, files)
+        is_image_mode = are_valid_files(self.valid_img_exts, files)
+        is_text_mode = are_valid_files(self.valid_txt_exts, files)
+        is_video_mode = are_valid_files(self.valid_vid_exts, files)
 
         if is_image_mode:
             mode = AnalyserMode.IMAGE
