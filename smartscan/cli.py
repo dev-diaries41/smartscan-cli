@@ -123,10 +123,8 @@ async def cli():
                 dirpaths = load_dir_list(args.dirlist_file)
             else:
                 dirpaths = args.dirs
-            dirs_similarities = file_analyser.compare_file_to_dirs(source_filepath, dirpaths)
-            print(f"File-to-directories similarity\n--------------------------\n")
-            for (key, value) in sorted(dirs_similarities.items(), key=lambda x: x[1], reverse=True):
-                print(f"Directory: {key} | Similarity: {value}")
+            best_dir, best_sim = file_analyser.compare_file_to_dirs(source_filepath, dirpaths)
+            print(f"Best Directory: {best_dir} | Similarity: {best_sim}")
 
     elif args.command == "autosort":
         if args.clear_dir_prototypes:
