@@ -51,9 +51,6 @@ class FileAnalyser:
         embeddings = self._get_or_embed_batch(files, mode)
         return np.dot(embeddings[0], embeddings[1])
 
-    def compare_embedding_to_dir(self, embedding: np.ndarray, dirpath: str, mode: AnalyserMode):
-        prototype_embedding = self._get_prototype(dirpath, mode)
-        return np.dot(embedding, prototype_embedding)
     
     def compare_file_to_dir(self, filepath: str, dirpath: str):
         """
@@ -61,7 +58,8 @@ class FileAnalyser:
         """
         mode = self._get_mode([filepath])
         file_embedding = self._get_or_embed(filepath, mode)
-        return self.compare_embedding_to_dir(file_embedding, dirpath, mode)
+        prototype_embedding = self._get_prototype(dirpath, mode)
+        return np.dot(file_embedding, prototype_embedding)
 
     def compare_file_to_dirs(self, filepath: str, dirpaths: List[str]) -> dict[str, float]:
             """
@@ -75,7 +73,8 @@ class FileAnalyser:
 
             for dirpath in dirpaths:
                 try:
-                    similarity = self.compare_embedding_to_dir(file_embedding, dirpath, mode)
+                    prototype_embedding = self._get_prototype(dirpath, mode)
+                    similarity = np.dot(file_embedding, prototype_embedding)
                 except Exception as e:
                     print(f"[WARNING] Error comparing embeddings for directory {dirpath}: {e}")
                     continue
