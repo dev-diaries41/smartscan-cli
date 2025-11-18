@@ -15,7 +15,7 @@ Standalone CLI tool and server to power the SmartScan Desktop app (coming soon),
 * Index files in target directories
 * Supports multiple embedding providers
 
-**Auto-Sort**
+**AutoSort**
 
 * Automatically organize files based on similarity thresholds
 * Restore files to original location after unintended moves
@@ -110,7 +110,7 @@ smartscan compare myfile.txt --dirlist-file target_dirs.txt
 
 ---
 
-## Autosort Command
+## AutoSort Command
 
 Scan directories and automatically organize files.
 
@@ -134,7 +134,7 @@ smartscan autosort --dirs /path/one /path/two -t 0.7
 
 ---
 
-## Autosort Service Command
+## AutoSort Service Command
 
 Manage systemd background service for daily auto-organization:
 
