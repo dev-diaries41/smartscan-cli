@@ -2,9 +2,9 @@ import os
 import datetime
 import numpy as np
 import subprocess
-import numpy as np
 import re
 from pathlib import Path
+from smartscan.errors import SmartScanError, ErrorCode
 
 def read_text_file(filepath: str):
     with open(filepath, 'r', encoding='utf-8') as file:
@@ -21,7 +21,7 @@ def get_days_since_last_modified(file_path: str) -> int:
 
 def get_files_from_dirs(dirs: list[str], dir_skip_patterns: list[str] = [], allowed_exts: tuple[str] | None  = None, limit: int | None = None) -> list[str]:
     if not isinstance(dirs, list):
-        raise ValueError("Invalid list of directories")
+        raise SmartScanError("Invalid list of directories", code=ErrorCode.INVALID_ARGUMENT)
     
     paths = []
 
@@ -52,7 +52,7 @@ def get_files_from_dirs(dirs: list[str], dir_skip_patterns: list[str] = [], allo
 
 def get_child_dirs(dirs: list[str], dir_skip_patterns: list[str] = []) -> list[str]:
     if not isinstance(dirs, list):
-        raise ValueError("Invalid list of directories")
+        raise SmartScanError("Invalid list of directories", code=ErrorCode.INVALID_ARGUMENT)
     
     paths = []
 

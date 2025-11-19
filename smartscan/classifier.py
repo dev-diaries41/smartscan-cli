@@ -1,4 +1,3 @@
-import os
 import numpy as np
 from dataclasses import dataclass
 from enum import IntEnum
@@ -7,6 +6,7 @@ from smartscan.processor import BatchProcessor, ProcessorListener
 from smartscan.providers import ImageEmbeddingProvider, TextEmbeddingProvider
 from smartscan.embeddings import few_shot_classification, embed_image_file, embed_text_file, embed_video_file
 from smartscan.utils import are_valid_files
+from smartscan.errors import SmartScanError, ErrorCode
 
 
 @dataclass
@@ -15,10 +15,6 @@ class ClassificationResult:
     class_id: str
     similarity: float
 
-class FileType(IntEnum):
-    TEXT = 0
-    IMAGE = 1
-    VIDEO = 2
 
 class FileClassifier(BatchProcessor[str, ClassificationResult]):
     def __init__(self, 
@@ -40,14 +36,11 @@ class FileClassifier(BatchProcessor[str, ClassificationResult]):
         self.n_chunks = n_chunks_limit
 
     def on_process(self, item):
-        if not os.path.isfile(item):
-            raise ValueError(f"Invalid file: {item}")
-        
         file_embedding = self._embed_file(item)
         destination_dir, best_similarity = few_shot_classification(file_embedding, self.class_prototypes)
         
         if best_similarity <= self.similarity_threshold:
-            raise ValueError("Below threshold")
+            raise SmartScanError("Item unclassified", ErrorCode.BELOW_SIMILARITY_THRESHOLD)
 
         return ClassificationResult(item, destination_dir, best_similarity)
     
@@ -67,5 +60,5 @@ class FileClassifier(BatchProcessor[str, ClassificationResult]):
             return embed_image_file(path, self.image_encoder)
         elif is_video_file:
             return embed_video_file(path, self.n_frames, self.image_encoder)
-        raise ValueError("Unsupported file type")
+        raise SmartScanError("Unsupported file type", code=ErrorCode.UNSUPPORTED_FILE_TYPE)
     
