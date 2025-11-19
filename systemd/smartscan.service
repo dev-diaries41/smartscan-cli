@@ -1,9 +1,0 @@
-[Unit]
-Description=Run SmartScan Script
-
-[Service]
-EnvironmentFile=%h/.smartscan/smartscan.json
-ExecStart=/bin/bash -c '/usr/local/bin/smartscan scan'
-
-[Install]
-WantedBy=default.target

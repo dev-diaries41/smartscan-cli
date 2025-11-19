@@ -1,6 +1,6 @@
 from abc import ABC
 from typing import Generic
-from smartscan.processor.types import Input, Output, MetricsFailure, MetricsSuccess
+from smartscan.processor.types import  Input, Output, MetricsFailure, MetricsSuccess
 
 
 class ProcessorListener(ABC, Generic[Input, Output]):

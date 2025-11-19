@@ -1,5 +1,5 @@
-from typing import TypeVar
 from dataclasses import dataclass
+from typing import TypeVar
 
 Input = TypeVar("Input")
 Output = TypeVar("Output")
@@ -12,6 +12,6 @@ class MetricsSuccess:
 @dataclass
 class MetricsFailure:
     total_processed: int
-    time_elapsed: int
+    time_elapsed: float
     error: Exception
     

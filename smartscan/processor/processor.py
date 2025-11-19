@@ -3,10 +3,11 @@ import asyncio
 from asyncio import Semaphore
 from abc import ABC, abstractmethod
 from typing import Generic
-from smartscan.processor.types import Input, Output, MetricsFailure, MetricsSuccess
+
 from smartscan.processor.processor_listener import ProcessorListener
 from smartscan.processor.memory import MemoryManager
 from smartscan.utils.async_utils import AtomicInteger
+from smartscan.processor.types import  Input, Output, MetricsFailure, MetricsSuccess
 
 
 class BatchProcessor(ABC, Generic[Input, Output]):
@@ -89,7 +90,6 @@ class BatchProcessor(ABC, Generic[Input, Output]):
     def on_process(self, item: Input) -> Output:
         pass 
 
-    # Could even IO operations
     @abstractmethod
     async def on_batch_complete(self, batch: list[Output]):
         pass 

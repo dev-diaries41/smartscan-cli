@@ -1,10 +1,9 @@
 import numpy as np
-from PIL import Image
-from chromadb import Collection
 
 from smartscan.processor.processor import BatchProcessor
-from smartscan.utils.file import read_text_file, are_valid_files
-from smartscan.utils.embeddings import embed_video
+from smartscan.processor.processor_listener import ProcessorListener
+from smartscan.utils.file import are_valid_files
+from smartscan.utils.embeddings import embed_video_file, embed_text_file, embed_image_file
 from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider
 
 
@@ -12,87 +11,38 @@ class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
     def __init__(self, 
                 image_encoder: ImageEmbeddingProvider, 
                 text_encoder: TextEmbeddingProvider,
-                text_store: Collection,
-                image_store: Collection,
-                video_store: Collection,
                 n_frames: int = 10,
+                listener = ProcessorListener[str, tuple[str, np.ndarray]],
                 **kwargs
                 ):
-        super().__init__(**kwargs)
+        super().__init__(listener=listener, **kwargs)
         self.image_encoder = image_encoder
         self.text_encoder = text_encoder
-        self.text_store = text_store
-        self.image_store = image_store
-        self.video_store = video_store
         self.n_frames = n_frames
         self.valid_img_exts = ('.png', '.jpg', '.jpeg', '.bmp', '.webp')
         self.valid_txt_exts = ('.txt', '.md', '.rst', '.html', '.json')
         self.valid_vid_exts = ('.mp4', '.mkv', '.webm')
 
     def on_process(self, item):
-            filepath = item
-            is_image_file = are_valid_files(self.valid_img_exts, [filepath])
-            is_text_file = are_valid_files(self.valid_txt_exts, [filepath])
-            is_video_file = are_valid_files(self.valid_vid_exts, [filepath])
-
-            if is_image_file:
-                embedder = self.image_encoder 
-                file_embedding = embedder.embed(Image.open(filepath))
-            elif is_text_file:
-                embedder = self.text_encoder
-                file_embedding = embedder.embed(read_text_file(filepath))
-            elif is_video_file:
-                embedder = self.image_encoder
-                file_embedding = embed_video(filepath, self.n_frames, self.image_encoder)
-            else:
-                raise ValueError("Unsupported file type")
-            
-            return filepath, file_embedding
+            file_embedding = self._embed_file(item)
+            return item, file_embedding
              
-    
+    # delegate to lister e.g to handle storage
     async def on_batch_complete(self, batch):
-        if len(batch) <= 0:
-            return
-        partitions = { "image": ([], []), "text": ([], []), "video": ([], [])}
+        self.listener.on_batch_complete(batch)
 
-        for id_, embed in batch:
-            is_image_file = are_valid_files(self.valid_img_exts, [id_])
-            is_text_file = are_valid_files(self.valid_txt_exts, [id_])
-            is_video_file = are_valid_files(self.valid_vid_exts, [id_])
 
-            if is_image_file:
-                partitions['image'][0].append(id_)
-                partitions['image'][1].append(embed)
-            elif is_text_file:
-                partitions['text'][0].append(id_)
-                partitions['text'][1].append(embed)
-            elif is_video_file:
-                partitions['video'][0].append(id_)
-                partitions['video'][1].append(embed)
+    def _embed_file(self, path: str) -> np.ndarray:
+        is_image_file = are_valid_files(self.valid_img_exts, [path])
+        is_text_file = are_valid_files(self.valid_txt_exts, [path])
+        is_video_file = are_valid_files(self.valid_vid_exts, [path])
+
+        if is_text_file:
+            return embed_text_file(path, self.text_encoder, 128, self.n_chunks)
+        elif is_image_file:
+            return embed_image_file(path, self.image_encoder)
+        elif is_video_file:
+            return embed_video_file(path, self.n_frames, self.image_encoder)
+        raise ValueError("Unsupported file type")
+    
         
-        if len(partitions['image'][0]) > 0:
-            self.image_store.add(ids = partitions['image'][0],embeddings=partitions['image'][1])
-        if len(partitions['text'][0]) > 0:
-            self.text_store.add(ids = partitions['text'][0],embeddings=partitions['text'][1])
-        if len(partitions['video'][0]) > 0:
-            self.video_store.add(ids = partitions['video'][0],embeddings=partitions['video'][1])
-                
-    def filter(self, items: list[str]) -> list[str]:
-        image_ids = self._get_exisiting_ids(self.image_store)
-        text_ids = self._get_exisiting_ids(self.text_store)
-        video_ids = self._get_exisiting_ids(self.video_store)
-        exclude = set(image_ids) | set(text_ids) | set(video_ids)
-        return [item for item in items if item not in exclude]
-  
-    def _get_exisiting_ids(self, store: Collection) -> list:
-        limit = 100
-        offset = 0
-        ids = []
-
-        while True:
-            batch = store.get(limit=limit, offset=offset)
-            if not batch['ids']:
-                break
-            ids.extend(batch['ids'])
-            offset += limit
-        return ids
