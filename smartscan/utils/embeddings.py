@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 from PIL import Image
 from smartscan.utils.file import get_frames_from_video, read_text_file
-from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider
+from smartscan.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider
 
 # embeddings (b, dim)
 def generate_prototype_embedding(embeddings: np.ndarray) -> np.ndarray:    

@@ -3,9 +3,9 @@ import numpy as np
 from dataclasses import dataclass
 from enum import IntEnum
 
-from smartscan.processor.processor import BatchProcessor
-from smartscan.processor.processor_listener import ProcessorListener
-from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider
+from smartscan.processor import BatchProcessor
+from smartscan.processor import ProcessorListener
+from smartscan.providers import ImageEmbeddingProvider, TextEmbeddingProvider
 from smartscan.utils.embeddings import few_shot_classification, embed_image_file, embed_text_file, embed_video_file
 from smartscan.utils.file import are_valid_files
 

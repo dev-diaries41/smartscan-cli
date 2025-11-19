@@ -1,24 +1,23 @@
 import numpy as np
-import io
 from PIL import Image
-from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider
-from smartscan.ml.models.onnx_model import OnnxModel
+from smartscan.providers import ImageEmbeddingProvider
+from smartscan.models.onnx_model import OnnxModel
 
 
-class DinoSmallV2ImageEmbedder(ImageEmbeddingProvider):
+class InceptionResnetFaceEmbedder(ImageEmbeddingProvider):
     def __init__(self, model_path: str):
         self._model = OnnxModel(model_path)
 
     @property
     def embedding_dim(self) -> int:
-        return 384
+        return 512
 
     def embed(self, data: Image.Image):
         """Create vector embeddings for text or image files using an ONNX model."""
 
         if not self._model.is_load(): 
             raise ValueError("Model not loaded")   
-             
+                    
         input_name = self._model.get_inputs()[0].name
         image_input = self._preprocess(data)
         outputs = self._model.run({input_name: image_input})
@@ -31,8 +30,8 @@ class DinoSmallV2ImageEmbedder(ImageEmbeddingProvider):
         """Create vector embeddings for text or image files using an ONNX model."""
 
         if not self._model.is_load(): 
-            raise ValueError("Model not loaded")       
-         
+            raise ValueError("Model not loaded")   
+                      
         input_name = self._model.get_inputs()[0].name
         images = [self._preprocess(item) for item in data]
         image_inputs = np.concatenate(images, axis=0)
@@ -51,38 +50,33 @@ class DinoSmallV2ImageEmbedder(ImageEmbeddingProvider):
         return self._model.is_load()
     
     @staticmethod
-    def _preprocess(image: Image.Image) -> np.ndarray:
+    def _preprocess(image: Image.Image):
+        SIZE = 160
         MODE = 'RGB'
-        SIZE = 224
-        RESAMPLE=Image.BICUBIC
-        MEAN=(0.485, 0.456, 0.406)
-        STD=(0.229, 0.224, 0.225)
-        
+        MEAN = (0.485, 0.456, 0.406)
+        STD = (0.229, 0.224, 0.225)
+        INTERPOLATION = Image.BICUBIC
+
         image = image.convert(MODE)
-
-        # Resize shorter side to output_size / crop_pct (224/0.875 = 256)
-        crop_pct = SIZE / (SIZE / 0.875) 
-        scale_size = int(SIZE / crop_pct + 0.5) 
-
+        
+        # Resize based on the shortest edge
         w, h = image.size
-        if h < w:
-            new_h = scale_size
-            new_w = int(w * (scale_size / h))
-        else:
-            new_w = scale_size
-            new_h = int(h * (scale_size / w))
-        image = image.resize((new_w, new_h), resample=RESAMPLE)
-
+        scale = SIZE / min(w, h)
+        new_w, new_h = round(w * scale), round(h * scale)
+        image = image.resize((new_w, new_h), INTERPOLATION)
+        
         left = (new_w - SIZE) // 2
-        top  = (new_h - SIZE) // 2
+        top = (new_h - SIZE) // 2
         image = image.crop((left, top, left + SIZE, top + SIZE))
+        
+        img_array = np.array(image).astype(np.float32) / 255.0
+        
+        img_array = img_array.transpose(2, 0, 1)
+        img_array = np.expand_dims(img_array, axis=0)
 
-        arr = np.asarray(image, dtype=np.float32) / 255.0
+        # channel-first normalization tensors so normalization must happen after transposing
+        mean = np.array(MEAN).reshape(3, 1, 1)
+        std = np.array(STD).reshape(3, 1, 1)
+        img_array = (img_array - mean) / std
+        return img_array.astype(dtype=np.float32)
 
-        mean = np.array(MEAN, dtype=np.float32)
-        std  = np.array(STD,  dtype=np.float32)
-        arr = (arr - mean) / std
-
-        arr = arr.transpose(2, 0, 1)
-        arr = np.expand_dims(arr, axis=0)
-        return arr.astype(dtype=np.float32)

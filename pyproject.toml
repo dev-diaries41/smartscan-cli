@@ -26,7 +26,8 @@ dependencies = [
     "sympy==1.14.0",
     "typing-inspection==0.4.2",
     "typing_extensions==4.15.0"
+    "tokenizers==0.22.1"
 ]
 
-[tool.setuptools]
-packages = ["smartscan"]
+[tool.setuptools.packages]
+find = {}

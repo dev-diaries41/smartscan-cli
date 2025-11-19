@@ -1,10 +1,10 @@
 import numpy as np
 
-from smartscan.processor.processor import BatchProcessor
-from smartscan.processor.processor_listener import ProcessorListener
+from smartscan.processor import BatchProcessor
+from smartscan.processor import ProcessorListener
 from smartscan.utils.file import are_valid_files
 from smartscan.utils.embeddings import embed_video_file, embed_text_file, embed_image_file
-from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider
+from smartscan.providers import ImageEmbeddingProvider, TextEmbeddingProvider
 
 
 class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):

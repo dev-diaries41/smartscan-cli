@@ -1,8 +1,8 @@
 import os
 import numpy as np
-from smartscan.ml.providers.embeddings.embedding_provider import TextEmbeddingProvider
-from smartscan.ml.models.onnx_model import OnnxModel
-from smartscan.ml.providers.embeddings.minilm.tokenizer import load_minilm_tokenizer
+from smartscan.providers import TextEmbeddingProvider
+from smartscan.models.onnx_model import OnnxModel
+from smartscan.providers.embeddings.minilm.tokenizer import load_minilm_tokenizer
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

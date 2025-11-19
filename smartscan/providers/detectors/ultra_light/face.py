@@ -1,10 +1,8 @@
 import numpy as np
-import io
 from PIL import Image
 
-from smartscan.ml.providers.detectors.detector_provider import DetectorProvider
-from smartscan.ml.models.onnx_model import OnnxModel
-
+from smartscan.providers import DetectorProvider
+from smartscan.models.onnx_model import OnnxModel
 
 
 class UltraLightFaceDetector(DetectorProvider):

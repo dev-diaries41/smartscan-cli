@@ -1,8 +1,7 @@
 import numpy as np
-import io
 from PIL import Image
-from smartscan.ml.providers.embeddings.embedding_provider import  ImageEmbeddingProvider
-from smartscan.ml.models.onnx_model import OnnxModel
+from smartscan.providers import  ImageEmbeddingProvider
+from smartscan.models.onnx_model import OnnxModel
 
 
 class ClipImageEmbedder(ImageEmbeddingProvider):

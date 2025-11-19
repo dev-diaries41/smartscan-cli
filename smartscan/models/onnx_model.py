@@ -1,4 +1,4 @@
-from smartscan.ml.models.base_model import BaseModel
+from smartscan.models.base_model import BaseModel
 import onnxruntime as ort
 import numpy as np
 

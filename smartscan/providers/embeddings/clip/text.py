@@ -1,8 +1,8 @@
 import numpy as np
 import os
-from smartscan.ml.providers.embeddings.embedding_provider import TextEmbeddingProvider
-from smartscan.ml.models.onnx_model import OnnxModel
-from smartscan.ml.providers.embeddings.clip.tokenizer import load_clip_tokenizer
+from smartscan.providers import TextEmbeddingProvider
+from smartscan.models.onnx_model import OnnxModel
+from smartscan.providers.embeddings.clip.tokenizer import load_clip_tokenizer
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 VOCAB_PATH = os.path.join(BASE_DIR, "vocab.json")
