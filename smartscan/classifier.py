@@ -1,12 +1,12 @@
 import numpy as np
 from dataclasses import dataclass
-from enum import IntEnum
 
 from smartscan.processor import BatchProcessor, ProcessorListener
 from smartscan.providers import ImageEmbeddingProvider, TextEmbeddingProvider
 from smartscan.embeddings import few_shot_classification, embed_image_file, embed_text_file, embed_video_file
 from smartscan.utils import are_valid_files
 from smartscan.errors import SmartScanError, ErrorCode
+from smartscan.constants import SupportedFileTypes
 
 
 @dataclass
@@ -60,5 +60,5 @@ class FileClassifier(BatchProcessor[str, ClassificationResult]):
             return embed_image_file(path, self.image_encoder)
         elif is_video_file:
             return embed_video_file(path, self.n_frames, self.image_encoder)
-        raise SmartScanError("Unsupported file type", code=ErrorCode.UNSUPPORTED_FILE_TYPE)
+        raise SmartScanError("Unsupported file type", code=ErrorCode.UNSUPPORTED_FILE_TYPE, details=f"Supported file types: {SupportedFileTypes.IMAGE + SupportedFileTypes.TEXT + SupportedFileTypes.VIDEO}")
     

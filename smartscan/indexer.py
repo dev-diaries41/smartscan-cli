@@ -5,6 +5,7 @@ from smartscan.utils import are_valid_files
 from smartscan.embeddings import embed_video_file, embed_text_file, embed_image_file
 from smartscan.providers import ImageEmbeddingProvider, TextEmbeddingProvider
 from smartscan.errors import SmartScanError, ErrorCode
+from smartscan.constants import SupportedFileTypes
 
 
 class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
@@ -45,6 +46,6 @@ class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
             return embed_image_file(path, self.image_encoder)
         elif is_video_file:
             return embed_video_file(path, self.n_frames, self.image_encoder)
-        raise SmartScanError("Unsupported file type", code=ErrorCode.UNSUPPORTED_FILE_TYPE)
+        raise SmartScanError("Unsupported file type", code=ErrorCode.UNSUPPORTED_FILE_TYPE, details=f"Supported file types: {SupportedFileTypes.IMAGE + SupportedFileTypes.TEXT + SupportedFileTypes.VIDEO}")
     
         
