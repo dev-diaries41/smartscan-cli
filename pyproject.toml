@@ -34,4 +34,5 @@ find = {}
 
 [tool.setuptools.package-data]
 "smartscan.providers.embeddings.clip" = ["vocab.json", "merges.txt"]
+"smartscan.providers.embeddings.minilm" = ["vocab.txt"]
 
