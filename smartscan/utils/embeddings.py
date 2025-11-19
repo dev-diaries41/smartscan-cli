@@ -1,8 +1,9 @@
 
 import numpy as np
+import pickle
 from PIL import Image
-
-from smartscan.utils.file import get_frames_from_video
+from smartscan.utils.file import get_frames_from_video, read_text_file
+from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider
 
 # embeddings (b, dim)
 def generate_prototype_embedding(embeddings: np.ndarray) -> np.ndarray:    
@@ -11,11 +12,35 @@ def generate_prototype_embedding(embeddings: np.ndarray) -> np.ndarray:
     prototype /= np.linalg.norm(prototype)
     return prototype
 
-def embed_video(path: str, n_frames: int, embedder):
+
+def embed_video_file(path: str, n_frames: int, embedder: ImageEmbeddingProvider):
     frame_arrs = get_frames_from_video(path, n_frames)
     frame_images = [Image.fromarray(frame) for frame in frame_arrs]
     batch = embedder.embed_batch(frame_images)
     return generate_prototype_embedding(batch)
+
+
+def embed_video_files(paths: list[str], n_frames: int, embedder: ImageEmbeddingProvider):
+    return np.stack([embed_video_file(path, n_frames, embedder) for path in paths], axis=0)
+
+
+def embed_image_file(path: str, embedder: ImageEmbeddingProvider):
+    return embedder.embed(Image.open(path))
+
+
+def embed_image_files(paths: list[str], embedder: ImageEmbeddingProvider):
+    return embedder.embed_batch([Image.open(path) for path in paths])
+
+
+def embed_text_file(path: str, embedder: TextEmbeddingProvider, max_tokenizer_length=128, max_chunks=5):
+    chunks = chunk_text(read_text_file(path), max_tokenizer_length, max_chunks)
+    chunk_embeddings = embedder.embed_batch(chunks)
+    return generate_prototype_embedding(chunk_embeddings)
+
+
+def embed_text_files(paths: list[str], embedder: TextEmbeddingProvider, max_tokenizer_length=128, max_chunks=5):
+    return np.stack([embed_text_file(path, embedder, max_tokenizer_length, max_chunks) for path in paths], axis=0)
+
 
 def few_shot_classification(item_embedding:  np.ndarray, class_prototypes: list[tuple[str, np.ndarray]]) -> tuple[str, float]:
         class_similarities_dict: dict[str, float] = {}
@@ -53,3 +78,15 @@ def chunk_text(s: str, tokenizer_max_length: int, limit: int = 10):
         start = end + 1
 
     return chunks
+
+
+def save_embedding(filepath: str, embedding: np.ndarray):
+    """Saves embedding to a file."""
+    with open(filepath, 'wb') as f:
+        pickle.dump(embedding, f)
+
+
+def load_embedding(filepath: str) -> np.ndarray:
+    """Loads embedding from a file."""
+    with open(filepath, 'rb') as f:
+        return pickle.load(f)
