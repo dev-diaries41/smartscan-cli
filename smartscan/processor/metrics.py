@@ -1,8 +1,4 @@
 from dataclasses import dataclass
-from typing import TypeVar
-
-Input = TypeVar("Input")
-Output = TypeVar("Output")
 
 @dataclass
 class MetricsSuccess:

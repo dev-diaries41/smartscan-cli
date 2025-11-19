@@ -7,7 +7,8 @@ from typing import Generic
 from smartscan.processor.processor_listener import ProcessorListener
 from smartscan.processor.memory import MemoryManager
 from smartscan.utils.async_utils import AtomicInteger
-from smartscan.processor.types import  Input, Output, MetricsFailure, MetricsSuccess
+from smartscan.processor.metrics import  MetricsFailure, MetricsSuccess
+from smartscan.types import Input, Output
 
 
 class BatchProcessor(ABC, Generic[Input, Output]):
