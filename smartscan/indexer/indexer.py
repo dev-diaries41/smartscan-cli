@@ -1,10 +1,9 @@
 import numpy as np
-from PIL import Image
 
 from smartscan.processor.processor import BatchProcessor
 from smartscan.processor.processor_listener import ProcessorListener
-from smartscan.utils.file import read_text_file, are_valid_files
-from smartscan.utils.embeddings import embed_video
+from smartscan.utils.file import are_valid_files
+from smartscan.utils.embeddings import embed_video_file, embed_text_file, embed_image_file
 from smartscan.ml.providers.embeddings.embedding_provider import ImageEmbeddingProvider, TextEmbeddingProvider
 
 
@@ -25,26 +24,25 @@ class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
         self.valid_vid_exts = ('.mp4', '.mkv', '.webm')
 
     def on_process(self, item):
-            filepath = item
-            is_image_file = are_valid_files(self.valid_img_exts, [filepath])
-            is_text_file = are_valid_files(self.valid_txt_exts, [filepath])
-            is_video_file = are_valid_files(self.valid_vid_exts, [filepath])
-
-            if is_image_file:
-                embedder = self.image_encoder 
-                file_embedding = embedder.embed(Image.open(filepath))
-            elif is_text_file:
-                embedder = self.text_encoder
-                file_embedding = embedder.embed(read_text_file(filepath))
-            elif is_video_file:
-                embedder = self.image_encoder
-                file_embedding = embed_video(filepath, self.n_frames, self.image_encoder)
-            else:
-                raise ValueError("Unsupported file type")
-            
-            return filepath, file_embedding
+            file_embedding = self._embed_file(item)
+            return item, file_embedding
              
-    
+    # delegate to lister e.g to handle storage
     async def on_batch_complete(self, batch):
         self.listener.on_batch_complete(batch)
+
+
+    def _embed_file(self, path: str) -> np.ndarray:
+        is_image_file = are_valid_files(self.valid_img_exts, [path])
+        is_text_file = are_valid_files(self.valid_txt_exts, [path])
+        is_video_file = are_valid_files(self.valid_vid_exts, [path])
+
+        if is_text_file:
+            return embed_text_file(path, self.text_encoder, 128, self.n_chunks)
+        elif is_image_file:
+            return embed_image_file(path, self.image_encoder)
+        elif is_video_file:
+            return embed_video_file(path, self.n_frames, self.image_encoder)
+        raise ValueError("Unsupported file type")
+    
         
