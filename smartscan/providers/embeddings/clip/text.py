@@ -3,6 +3,7 @@ from smartscan.providers import TextEmbeddingProvider
 from smartscan.models.onnx_model import OnnxModel
 from smartscan.providers.embeddings.clip.tokenizer import load_clip_tokenizer
 from importlib import resources
+from smartscan.errors import SmartScanError, ErrorCode
 
 class ClipTextEmbedder(TextEmbeddingProvider):
     def __init__(self, model_path: str):
@@ -20,9 +21,7 @@ class ClipTextEmbedder(TextEmbeddingProvider):
     def embed(self, data: str):
         """Create vector embeddings for text using an ONNX model."""
 
-        if not self._model.is_load(): 
-            raise ValueError("Model not loaded")
-                        
+        if not self.is_initialized(): raise SmartScanError("Model not loaded", code=ErrorCode.MODEL_NOT_LOADED, details="Call init method first")                
         input_name = self._model.get_inputs()[0].name
         token_ids = self._tokenize(data)
         token_input = np.array([token_ids], dtype=np.int64)

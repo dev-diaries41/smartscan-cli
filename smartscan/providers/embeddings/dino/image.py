@@ -2,6 +2,7 @@ import numpy as np
 from PIL import Image
 from smartscan.providers import ImageEmbeddingProvider
 from smartscan.models.onnx_model import OnnxModel
+from smartscan.errors import SmartScanError, ErrorCode
 
 
 class DinoSmallV2ImageEmbedder(ImageEmbeddingProvider):
@@ -15,9 +16,7 @@ class DinoSmallV2ImageEmbedder(ImageEmbeddingProvider):
     def embed(self, data: Image.Image):
         """Create vector embeddings for text or image files using an ONNX model."""
 
-        if not self._model.is_load(): 
-            raise ValueError("Model not loaded")   
-             
+        if not self.is_initialized(): raise SmartScanError("Model not loaded", code=ErrorCode.MODEL_NOT_LOADED, details="Call init method first")
         input_name = self._model.get_inputs()[0].name
         image_input = self._preprocess(data)
         outputs = self._model.run({input_name: image_input})
@@ -29,9 +28,7 @@ class DinoSmallV2ImageEmbedder(ImageEmbeddingProvider):
     def embed_batch(self, data: list[Image.Image]):
         """Create vector embeddings for text or image files using an ONNX model."""
 
-        if not self._model.is_load(): 
-            raise ValueError("Model not loaded")       
-         
+        if not self.is_initialized(): raise SmartScanError("Model not loaded", code=ErrorCode.MODEL_NOT_LOADED, details="Call init method first")
         input_name = self._model.get_inputs()[0].name
         images = [self._preprocess(item) for item in data]
         image_inputs = np.concatenate(images, axis=0)

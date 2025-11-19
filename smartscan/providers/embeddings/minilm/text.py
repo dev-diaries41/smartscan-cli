@@ -1,8 +1,9 @@
 import numpy as np
+from importlib import resources
 from smartscan.providers import TextEmbeddingProvider
 from smartscan.models.onnx_model import OnnxModel
 from smartscan.providers.embeddings.minilm.tokenizer import load_minilm_tokenizer
-from importlib import resources
+from smartscan.errors import SmartScanError, ErrorCode
 
 
 class MiniLmTextEmbedder(TextEmbeddingProvider):
@@ -19,9 +20,7 @@ class MiniLmTextEmbedder(TextEmbeddingProvider):
     def embed(self, data: str):
         """Create vector embeddings for text using an ONNX model."""
 
-        if not self._model.is_load(): 
-            raise ValueError("Model not loaded")
-        
+        if not self.is_initialized(): raise SmartScanError("Model not loaded", code=ErrorCode.MODEL_NOT_LOADED, details="Call init method first")
         input_name = self._model.get_inputs()[0].name
         token_ids = self._tokenize(data)
         attention_mask = [1 if id != 0 else 0 for id in token_ids]
@@ -38,9 +37,7 @@ class MiniLmTextEmbedder(TextEmbeddingProvider):
     def embed_batch(self, data: list[str]):
         """Create vector embeddings for batch of text files using an ONNX model."""
 
-        if not self._model.is_load(): 
-            raise ValueError("Model not loaded")
-        
+        if not self.is_initialized(): raise SmartScanError("Model not loaded", code=ErrorCode.MODEL_NOT_LOADED, details="Call init method first")
         input_names = self._model.get_inputs()
         token_ids_batch = [self._tokenize(item) for item in data]
         attention_mask_batch = [[1 if id != 0 else 0 for id in token_ids] for token_ids in token_ids_batch]
