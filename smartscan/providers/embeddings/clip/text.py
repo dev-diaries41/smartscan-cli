@@ -1,19 +1,17 @@
 import numpy as np
-import os
 from smartscan.providers import TextEmbeddingProvider
 from smartscan.models.onnx_model import OnnxModel
 from smartscan.providers.embeddings.clip.tokenizer import load_clip_tokenizer
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-VOCAB_PATH = os.path.join(BASE_DIR, "vocab.json")
-MERGES_PATH = os.path.join(BASE_DIR, "merges.txt")
+from importlib import resources
 
 class ClipTextEmbedder(TextEmbeddingProvider):
     def __init__(self, model_path: str):
         self._model = OnnxModel(model_path)
         self._embedding_dim = 512
         self._max_len = 77
-        self.tokenizer = load_clip_tokenizer(VOCAB_PATH, MERGES_PATH)
+        with resources.path("smartscan.providers.embeddings.clip", "vocab.json") as vocab_path, \
+             resources.path("smartscan.providers.embeddings.clip", "merges.txt") as merges_path:
+            self.tokenizer = load_clip_tokenizer(str(vocab_path), str(merges_path))
 
     @property
     def embedding_dim(self) -> int:
