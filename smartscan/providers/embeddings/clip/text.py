@@ -34,7 +34,7 @@ class ClipTextEmbedder(TextEmbeddingProvider):
     def embed_batch(self, data: list[str]):
         """Create vector embeddings for batch of text files using an ONNX model."""
 
-        assert self._model.is_load(), "Model not loaded"
+        if not self.is_initialized(): raise SmartScanError("Model not loaded", code=ErrorCode.MODEL_NOT_LOADED, details="Call init method first")                
         
         input_name = self._model.get_inputs()[0].name
         token_ids_batch = [self._tokenize(item) for item in data]

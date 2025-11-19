@@ -3,6 +3,7 @@ from PIL import Image
 
 from smartscan.providers import DetectorProvider
 from smartscan.models.onnx_model import OnnxModel
+from smartscan.errors import SmartScanError, ErrorCode
 
 
 class UltraLightFaceDetector(DetectorProvider):
