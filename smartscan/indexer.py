@@ -2,8 +2,8 @@ import numpy as np
 
 from smartscan.processor import BatchProcessor
 from smartscan.processor import ProcessorListener
-from smartscan.utils.file import are_valid_files
-from smartscan.utils.embeddings import embed_video_file, embed_text_file, embed_image_file
+from smartscan.utils import are_valid_files
+from smartscan.embeddings import embed_video_file, embed_text_file, embed_image_file
 from smartscan.providers import ImageEmbeddingProvider, TextEmbeddingProvider
 
 

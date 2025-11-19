@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-def nms_numpy(boxes, scores, iou_threshold):
+def nms(boxes: np.ndarray, scores: np.ndarray, iou_threshold: float):
     """Simple NMS in NumPy."""
     x1 = boxes[:, 0]
     y1 = boxes[:, 1]
@@ -57,7 +57,7 @@ def draw_boxes(
     scores_keep = scores[keep_indices]
 
     # NMS
-    keep_nms = nms_numpy(boxes_px, scores_keep, nms_threshold)
+    keep_nms = nms(boxes_px, scores_keep, nms_threshold)
     filtered_boxes = boxes_px[keep_nms]
     filtered_scores = scores_keep[keep_nms]
 
@@ -82,7 +82,7 @@ def crop_faces(image: Image.Image, boxes: np.ndarray, scores: np.ndarray, conf_t
     boxes_px = (boxes[keep_indices] * [img_w, img_h, img_w, img_h]).astype(int)
     scores_keep = scores[keep_indices]
 
-    keep_nms = nms_numpy(boxes_px, scores_keep, nms_threshold)
+    keep_nms = nms(boxes_px, scores_keep, nms_threshold)
     filtered_boxes = boxes_px[keep_nms]
 
     cropped_faces = [image.crop((x1, y1, x2, y2)) for (x1, y1, x2, y2) in filtered_boxes]
