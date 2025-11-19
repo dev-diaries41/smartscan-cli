@@ -12,6 +12,7 @@ class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
                 image_encoder: ImageEmbeddingProvider, 
                 text_encoder: TextEmbeddingProvider,
                 n_frames: int = 10,
+                n_chunks: int = 5,
                 listener = ProcessorListener[str, tuple[str, np.ndarray]],
                 **kwargs
                 ):
@@ -19,6 +20,7 @@ class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
         self.image_encoder = image_encoder
         self.text_encoder = text_encoder
         self.n_frames = n_frames
+        self.n_chunks = n_chunks
         self.valid_img_exts = ('.png', '.jpg', '.jpeg', '.bmp', '.webp')
         self.valid_txt_exts = ('.txt', '.md', '.rst', '.html', '.json')
         self.valid_vid_exts = ('.mp4', '.mkv', '.webm')
@@ -29,7 +31,7 @@ class FileIndexer(BatchProcessor[str, tuple[str, np.ndarray]]):
              
     # delegate to lister e.g to handle storage
     async def on_batch_complete(self, batch):
-        self.listener.on_batch_complete(batch)
+        await self.listener.on_batch_complete(batch)
 
 
     def _embed_file(self, path: str) -> np.ndarray:
