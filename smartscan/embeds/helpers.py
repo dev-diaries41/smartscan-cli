@@ -2,6 +2,7 @@
 import numpy as np
 import pickle
 
+from numpy.typing import NDArray
 from smartscan.media.types import VideoSource, ImageSource
 from smartscan.media import  video_source_to_pil_images, image_source_to_pil_image, doc_source_to_text_chunks
 from smartscan.providers import ImageEmbeddingProvider, TextEmbeddingProvider
@@ -14,8 +15,7 @@ _all__ = [
     "embed_text",
     "save_embedding",
     "load_embedding",
-    "calculate_cohesion_score",
-    "update_cohesion_score",
+    "quantize_embed"
 ]
 
 # embeddings (b, dim)
@@ -61,3 +61,9 @@ def load_embedding(filepath: str) -> np.ndarray:
     """Loads embedding from a file."""
     with open(filepath, 'rb') as f:
         return pickle.load(f)
+
+
+def quantize_embed(x: np.ndarray) -> NDArray[np.int8]:
+    q = np.round(x * 127).astype(np.int8)
+    return q
+
