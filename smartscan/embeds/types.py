@@ -3,9 +3,10 @@ from typing import Literal, Generic, TypeVar, Optional, Any, Dict, Union, Callab
 from dataclasses import dataclass, field
 
 
+TItem = TypeVar("TItem", bound=Any)
+TMetadata = TypeVar("TMetadata", bound=Dict)
 TData = TypeVar("TData", bound=Any)
 TMetadata = TypeVar("TMetadata", bound=Dict)
-
 FilterType = Union[Dict[str, Any], Callable[[Any], bool]] 
 
 __all__ = [
@@ -16,6 +17,9 @@ __all__ = [
     "EncoderType",
     "Include",
     "FilterType",
+    "TItem"
+    "TMetadata"
+    "TData"
 ]
 
 @dataclass
