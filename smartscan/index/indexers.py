@@ -1,5 +1,5 @@
 from smartscan.processor import BatchProcessor, ProcessorListener
-from smartscan.embeddings import embed_video, embed_text, embed_image
+from smartscan.embeds import embed_video, embed_text, embed_image
 from smartscan.providers import ImageEmbeddingProvider, TextEmbeddingProvider
 from smartscan.types import ItemEmbedding
 
