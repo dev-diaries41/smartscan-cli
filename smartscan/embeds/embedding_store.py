@@ -1,48 +1,34 @@
 from abc import ABC, abstractmethod
-from typing import Generic, List, Optional
-from smartscan.embeds.types import TData, TMetadata , FilterType, ItemEmbedding, GetResult, QueryResult, Include, ItemEmbeddingUpdate
-import numpy as np
+from typing import List, Optional
+from smartscan.embeds.types import QueryResult, StoredEmbedding
+from numpy.typing import NDArray
 
 
-
-class EmbeddingStore(ABC, Generic[TData, TMetadata]):
+class EmbeddingStore(ABC):
     @abstractmethod
-    def add(self, items: List[ItemEmbedding[TData, TMetadata]]) -> None:
+    def add(self, items: List[StoredEmbedding]) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def get(
-        self,
-        ids: Optional[List[str]] = None,
-        filter: Optional[FilterType] = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
-        include: Include = ["metadatas"],
-    ) -> GetResult:
+    def get(self, ids: Optional[List[str]] = None) -> List[StoredEmbedding]:
         raise NotImplementedError
 
     @abstractmethod
-    def query(
-        self,
-        query_embeds: List[np.ndarray],
-        filter: Optional[FilterType] = None,
-        limit: int = 10,
-        include: Include = ["metadatas"],
-    ) -> QueryResult:
+    def query(self, query_embed: NDArray, topK: int, ids: Optional[List[str]] = None, include_sims: bool = False ) -> QueryResult:
         raise NotImplementedError
 
     @abstractmethod
-    def update(self, items: List[ItemEmbeddingUpdate[TData, TMetadata]]) -> None:
+    def update(self, items: List[StoredEmbedding]) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def upsert(self, items: List[ItemEmbeddingUpdate[TData, TMetadata]]) -> None:
+    def upsert(self, items: List[StoredEmbedding]) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def delete(self, ids: Optional[List[str]] = None, filter: Optional[FilterType] = None) -> None:
+    def delete(self, ids: List[str]) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def count(self, filter: Optional[FilterType] = None) -> int:
+    def count(self) -> int:
         raise NotImplementedError
