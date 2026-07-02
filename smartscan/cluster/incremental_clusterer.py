@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.typing import NDArray
 import uuid
 import hnswlib
 
@@ -35,18 +36,18 @@ class IncrementalClusterer:
         self._rev_id_map: dict[str, int] = {}
         self._next_int_id = 0
 
-    def cluster(self, ids: list[str], embeddings: list[np.ndarray]) -> ClusterResult:
-        if not ids:
+    def cluster(self, items: dict[str, NDArray]) -> ClusterResult:
+        if not items:
             return ClusterResult(self.clusters, self.assignments, None)
 
-        all_items: dict[str, np.ndarray] = {i: e for i, e in zip(ids, embeddings)}
-        embed_dim = embeddings[0].shape[0]
+
+        embed_dim = next(iter(items.values())).shape[0]
         self._init_ann(embed_dim)
 
-        min_cluster_size = self._compute_min_cluster_size(len(all_items))
+        min_cluster_size = self._compute_min_cluster_size(len(items))
 
-        for item_id in ids:
-            emb = all_items[item_id]
+        for item_id in items.keys():
+            emb = items[item_id]
 
             if not self.clusters:
                 self._set_and_assign(item_id, emb)
@@ -99,14 +100,14 @@ class IncrementalClusterer:
         self._ann_index.set_ef(self.ann_ef_search)
         self._ann_initialized = True
 
-    def _add_to_ann(self, item_id: str, embedding: np.ndarray) -> None:
+    def _add_to_ann(self, item_id: str, embedding: NDArray) -> None:
         int_id = self._next_int_id
         self._next_int_id += 1
         self._id_map[int_id] = item_id
         self._rev_id_map[item_id] = int_id
         self._ann_index.add_items(embedding.reshape(1, -1), [int_id])
 
-    def _query_ann(self, embedding: np.ndarray) -> list[str]:
+    def _query_ann(self, embedding: NDArray) -> list[str]:
         k = min(self.top_k, self._next_int_id)
         if k == 0:
             return []
@@ -125,14 +126,14 @@ class IncrementalClusterer:
         adaptive_threshold = alpha * adaptive_threshold + (1.0 - alpha) * baseline
         return adaptive_threshold
 
-    def _set_and_assign(self, item_id: str, embedding: np.ndarray) -> None:
+    def _set_and_assign(self, item_id: str, embedding: NDArray) -> None:
         prototype_id = self._generate_id()
         metadata = ClusterMetadata(prototype_size=1, mean_similarity=self.default_threshold, std_similarity=0.0, label=Cluster.UNLABELLED)
         cluster = Cluster(prototype_id, embedding, metadata, label=Cluster.UNLABELLED)
         self.clusters[prototype_id] = cluster
         self.assignments[item_id] = prototype_id
 
-    def _update_and_assign(self, item_id: str, embedding: np.ndarray, cluster_id: ClusterId) -> None:
+    def _update_and_assign(self, item_id: str, embedding: NDArray, cluster_id: ClusterId) -> None:
         cluster = self.clusters[cluster_id]
         old_size = cluster.metadata.prototype_size
         old_meta = cluster.metadata
@@ -148,7 +149,7 @@ class IncrementalClusterer:
         cluster.metadata.std_similarity = new_std
         self.assignments[item_id] = cluster_id
 
-    def _assign_by_votes(self, emb: np.ndarray, avg_cohesion: float, min_cluster_size: int) -> Optional[ClusterId]:
+    def _assign_by_votes(self, emb: NDArray, avg_cohesion: float, min_cluster_size: int) -> Optional[ClusterId]:
         if not (self._ann_initialized and self._next_int_id > 0):
             return None
         nn_ids = self._query_ann(emb)
@@ -167,7 +168,7 @@ class IncrementalClusterer:
             return voted_cid
         return None
 
-    def _tally_votes(self, neighbour_ids: list[str], embedding: np.ndarray) -> tuple[dict[ClusterId, int], dict[ClusterId, list[float]]]:
+    def _tally_votes(self, neighbour_ids: list[str], embedding: NDArray) -> tuple[dict[ClusterId, int], dict[ClusterId, list[float]]]:
         vote_counts: dict[ClusterId, int] = {}
         vote_sims: dict[ClusterId, list[float]] = {}
         for nid in neighbour_ids:
