@@ -1,6 +1,6 @@
 from numpy.typing import NDArray
 from typing import Literal, Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 
 
@@ -13,7 +13,7 @@ __all__ = [
 @dataclass
 class StoredEmbedding():
     item_id: str
-    created_at: datetime
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     embedding: NDArray
 
 @dataclass(frozen=True)
