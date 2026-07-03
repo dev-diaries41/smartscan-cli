@@ -1,11 +1,9 @@
 from dataclasses import dataclass
 from numpy import ndarray
-from typing import NewType, Dict, List, ClassVar
-from pydantic import  BaseModel
+from typing import NewType, Dict, List
 
 __all__ = [
     "ClusterAccuracy",
-    "ClusterMetrics",
     "ClusterMetadata",
     "Cluster",
     "ItemId",
@@ -15,24 +13,8 @@ __all__ = [
     "TargetClusters",
     "ClusterMerges",
     "ClusterResult",
-    "ClusterNoEmbeddings",
 ]
-
-class ClusterMetrics(BaseModel):
-    prototype_size: int
-    mean_similarity: float = 0
-    std_similarity: float = 0
-
-class ClusterMetadata(ClusterMetrics):
-    label: str
-
-
-class ClusterNoEmbeddings(BaseModel):
-    UNLABELLED:ClassVar[str] = "unlabelled"
-    prototype_id: str
-    metadata: ClusterMetadata
-    label: str
-    
+  
 
 ItemId = NewType("ItemId", str)
 ClusterId = NewType("ClusterId", str)
@@ -43,12 +25,18 @@ TargetClusters = NewType("TargetClusters", List[ClusterId])
 ClusterMerges = Dict[MergeId, TargetClusters]
 
 @dataclass
+class ClusterMetadata:
+    prototype_size: int
+    mean_similarity: float = 0
+    std_similarity: float = 0
+    label: str
+
+@dataclass
 class Cluster:
     UNLABELLED = "unlabelled"
     prototype_id: str
     embedding: ndarray
     metadata: ClusterMetadata
-    label: str
 
 @dataclass(frozen=True)
 class ClusterAccuracy:
