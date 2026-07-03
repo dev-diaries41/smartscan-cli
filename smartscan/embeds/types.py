@@ -13,8 +13,8 @@ __all__ = [
 @dataclass
 class StoredEmbedding():
     item_id: str
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     embedding: NDArray
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 @dataclass(frozen=True)
 class QueryResult():
