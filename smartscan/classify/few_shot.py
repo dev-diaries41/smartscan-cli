@@ -31,6 +31,6 @@ def few_shot_classify(item: StoredEmbedding, labelled_clusters: list[Cluster]) -
                 continue
             threshold = cluster.metadata.mean_similarity - cluster.metadata.std_similarity
             if similarity > best_sim and similarity >= threshold:
-                label = cluster.label
+                label = cluster.metadata.label
                 best_sim = similarity
         return ClassificationResult(item_id=item.item_id, label=label, similarity=float(best_sim))
