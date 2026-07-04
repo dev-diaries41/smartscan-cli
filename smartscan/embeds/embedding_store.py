@@ -14,7 +14,7 @@ class EmbeddingStore(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def query(self, query_embed: NDArray, topK: int, ids: Optional[List[str]] = None, include_sims: bool = False ) -> QueryResult:
+    async def query(self, query_embed: NDArray, topK: int, ids: Optional[List[str]] = None, include_sims: bool = False, threshold: Optional[float] = None) -> QueryResult:
         raise NotImplementedError
 
     @abstractmethod
