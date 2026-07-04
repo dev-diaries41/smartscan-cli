@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from numpy import ndarray
 from typing import NewType, Dict, List
 
@@ -45,9 +45,9 @@ class ClusterAccuracy:
 
 @dataclass(frozen=True)
 class ClusterResult:
-    clusters:  Dict[ClusterId, Cluster]
-    assignments: Assignments
-    merges: ClusterMerges
+    clusters:  Dict[ClusterId, Cluster] = field(default_factory=dict)
+    assignments: Assignments = field(default_factory=dict)
+    merges: ClusterMerges = field(default_factory=dict)
 
 
 
