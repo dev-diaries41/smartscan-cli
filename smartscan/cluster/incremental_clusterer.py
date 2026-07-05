@@ -38,7 +38,7 @@ class IncrementalClusterer:
 
     def cluster(self, items: dict[str, NDArray]) -> ClusterResult:
         if not items:
-            return ClusterResult(self.clusters, self.assignments, None)
+            return ClusterResult()
 
 
         embed_dim = next(iter(items.values())).shape[0]
