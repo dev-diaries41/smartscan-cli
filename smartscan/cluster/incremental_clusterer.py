@@ -74,7 +74,6 @@ class IncrementalClusterer:
 
             self._add_to_ann(item_id, emb)
 
-        self._remove_singletons()
         
         avg_cohesion, _, avg_std = self._compute_average_cluster_stats()
         merge_threshold = max(self.default_threshold, avg_cohesion - avg_std)
@@ -209,12 +208,3 @@ class IncrementalClusterer:
         avg_std = np.mean(stds) if stds else 0.0
         return avg_cohesion, avg_cluster_size, avg_std
     
-    def _remove_singletons(self) -> None:
-        singleton_items = {
-            item_id: cid
-            for item_id, cid in self.assignments.items()
-            if self.clusters[cid].metadata.prototype_size == 1
-        }
-        for item_id, cid in singleton_items.items():
-            del self.clusters[cid]
-            self.assignments.pop(item_id, None)
