@@ -6,19 +6,13 @@ from smartscan.errors import SmartScanError, ErrorCode
 
 
 class DistillRobertATextEmbedder(TextEmbeddingProvider):
-    def __init__(self, model_path: str, vocab_path: str, merges_path: str, max_tokenizer_length: int = 512):
+    embedding_dim = 768
+    max_tokenizer_length = 512
+   
+    def __init__(self, model_path: str, vocab_path: str, merges_path: str):
         self._model = OnnxModel(model_path)
-        self._max_len = max_tokenizer_length
         self.tokenizer = load_roberta_tokenizer(vocab_path, merges_path)
-        
-    @property
-    def embedding_dim(self) -> int:
-        return 768
     
-    @property
-    def max_tokenizer_length(self) -> int:
-        return self._max_len
-        
     def embed(self, data: str) -> np.ndarray:
         if not self.is_initialized(): raise SmartScanError("Model not loaded", code=ErrorCode.MODEL_NOT_LOADED, details="Call init method first")
         input_names = self._model.get_inputs()

@@ -6,13 +6,10 @@ from smartscan.errors import SmartScanError, ErrorCode
 
 
 class ClipImageEmbedder(ImageEmbeddingProvider):
+    embedding_dim = 512
+
     def __init__(self, model_path: str):
         self._model = OnnxModel(model_path)
-        self._embedding_dim = 512
-
-    @property
-    def embedding_dim(self) -> int:
-        return self._embedding_dim
 
     def embed(self, data: Image.Image)-> np.ndarray:
         if not self.is_initialized(): raise SmartScanError("Model not loaded", code=ErrorCode.MODEL_NOT_LOADED, details="Call init method first")

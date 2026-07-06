@@ -6,13 +6,11 @@ from smartscan.errors import SmartScanError, ErrorCode
 
 
 class DinoSmallV2ImageEmbedder(ImageEmbeddingProvider):
+    embedding_dim = 384
+
     def __init__(self, model_path: str):
         self._model = OnnxModel(model_path)
-
-    @property
-    def embedding_dim(self) -> int:
-        return 384
-
+   
     def embed(self, data: Image.Image)-> np.ndarray:
         """Create vector embeddings for text or image files using an ONNX model."""
 
