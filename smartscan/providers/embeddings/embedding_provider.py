@@ -30,7 +30,7 @@ class EmbeddingProvider(ABC, Generic[T]):
 
 
 class TextEmbeddingProviderBase(EmbeddingProvider[str], ABC):
-    max_tokenizer_length: int
+    max_tokens: int
  
 ImageEmbeddingProvider = EmbeddingProvider[Image.Image]
 TextEmbeddingProvider = TextEmbeddingProviderBase
