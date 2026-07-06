@@ -5,17 +5,13 @@ from smartscan.providers.embeddings.tokenizers import load_clip_tokenizer
 from smartscan.errors import SmartScanError, ErrorCode
 
 class ClipTextEmbedder(TextEmbeddingProvider):
+    embedding_dim = 512
+    max_tokens = 77
+
     def __init__(self, model_path: str, vocab_path: str, merges_path: str):
         self._model = OnnxModel(model_path)
         self.tokenizer = load_clip_tokenizer(vocab_path, merges_path)
 
-    @property
-    def embedding_dim(self) -> int:
-        return 512
-    
-    @property
-    def max_tokenizer_length(self) -> int:
-        return 77
 
     def embed(self, data: str)-> np.ndarray:
         if not self.is_initialized(): raise SmartScanError("Model not loaded", code=ErrorCode.MODEL_NOT_LOADED, details="Call init method first")                
@@ -50,4 +46,4 @@ class ClipTextEmbedder(TextEmbeddingProvider):
     
     def _tokenize(self, text: str):
         token_ids = self.tokenizer.encode(text).ids
-        return token_ids[:self.max_tokenizer_length] + [0] * (self.max_tokenizer_length - len(token_ids))
+        return token_ids[:self.max_tokens] + [0] * (self.max_tokens - len(token_ids))

@@ -1,13 +1,13 @@
 from smartscan.processor import BatchProcessor, ProcessorListener
 from smartscan.embeds import embed_video, embed_text, embed_image
 from smartscan.providers import ImageEmbeddingProvider, TextEmbeddingProvider
-from smartscan.types import ItemEmbedding
+from smartscan.types import StoredEmbedding
 
 
-class ImageIndexer(BatchProcessor[str, ItemEmbedding]):
+class ImageIndexer(BatchProcessor[str, StoredEmbedding]):
     def __init__(self, 
                 image_encoder: ImageEmbeddingProvider, 
-                listener = ProcessorListener[str, ItemEmbedding],
+                listener = ProcessorListener[str, StoredEmbedding],
                 **kwargs
                 ):
         super().__init__(listener=listener, **kwargs)
@@ -15,7 +15,7 @@ class ImageIndexer(BatchProcessor[str, ItemEmbedding]):
 
     def on_process(self, item):
         embedding = embed_image(self.image_encoder, item)
-        return ItemEmbedding(item, embedding)
+        return StoredEmbedding(item, embedding)
              
     # delegate to lister e.g to handle storage
     async def on_batch_complete(self, batch):
@@ -23,11 +23,11 @@ class ImageIndexer(BatchProcessor[str, ItemEmbedding]):
 
 
         
-class VideoIndexer(BatchProcessor[str, ItemEmbedding]):
+class VideoIndexer(BatchProcessor[str, StoredEmbedding]):
     def __init__(self, 
                 image_encoder: ImageEmbeddingProvider, 
                 n_frames: int = 10,
-                listener = ProcessorListener[str, ItemEmbedding],
+                listener = ProcessorListener[str, StoredEmbedding],
                 **kwargs
                 ):
         super().__init__(listener=listener, **kwargs)
@@ -36,31 +36,29 @@ class VideoIndexer(BatchProcessor[str, ItemEmbedding]):
 
     def on_process(self, item):
         embedding = embed_video(self.image_encoder, item, self.n_frames)
-        return ItemEmbedding(item, embedding)
+        return StoredEmbedding(item, embedding)
              
     # delegate to lister e.g to handle storage
     async def on_batch_complete(self, batch):
         await self.listener.on_batch_complete(batch)
 
 
-class DocIndexer(BatchProcessor[str, list[ItemEmbedding]]):
+class DocIndexer(BatchProcessor[str, list[StoredEmbedding]]):
     def __init__(self, 
                 text_encoder: TextEmbeddingProvider,
-                listener = ProcessorListener[str, ItemEmbedding],
+                listener = ProcessorListener[str, StoredEmbedding],
                 max_chunks: int | None = None,
-                tokenizer_max_length: int = 128,
                 **kwargs
                 ):
         super().__init__(listener=listener, **kwargs)
         self.text_encoder = text_encoder
         self.max_chunks = max_chunks
-        self.tokenizer_max_length = tokenizer_max_length
 
     # All chunks share the same item_id (url or file) so that chunks are group
     # In the on_batch_complete method, the listener can handle use it as metaddata and assign unique ids to each chunk if required
     def on_process(self, item):
-        chunk_embeddings = embed_text(self.text_encoder, item, self.tokenizer_max_length, self.max_chunks)
-        return [ItemEmbedding(item, embedding) for embedding in chunk_embeddings]
+        chunk_embeddings = embed_text(self.text_encoder, item, self.text_encoder.max_tokens, self.max_chunks)
+        return [StoredEmbedding(item, embedding) for embedding in chunk_embeddings]
              
     # delegate to lister e.g to handle storage
     async def on_batch_complete(self, batch):
