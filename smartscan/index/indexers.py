@@ -14,7 +14,7 @@ class ImageIndexer(BatchProcessor[str, StoredEmbedding]):
         self.image_encoder = image_encoder
 
     def on_process(self, item):
-        embedding = embed_image(self.image_encoder, item)
+        embedding = embed_image(self.image_encoder, item)[0]
         return StoredEmbedding(item, embedding)
              
     # delegate to lister e.g to handle storage
