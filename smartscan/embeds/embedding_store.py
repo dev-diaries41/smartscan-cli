@@ -1,52 +1,34 @@
 from abc import ABC, abstractmethod
-from typing import Generic, List, Optional
-from smartscan.embeds.types import TData, TMetadata , FilterType, ItemEmbedding, GetResult, QueryResult, Include, ItemEmbeddingUpdate
-import numpy as np
+from typing import List, Optional
+from smartscan.embeds.types import QueryResult, StoredEmbedding
+from numpy.typing import NDArray
 
 
-
-class EmbeddingStore(ABC, Generic[TData, TMetadata]):
-    """Generic embedding store interface using ItemEmbedding objects."""
-
+class EmbeddingStore(ABC):
     @abstractmethod
-    def add(self, items: List[ItemEmbedding[TData, TMetadata]]) -> None:
-        """Add embeddings with optional data and metadata."""
+    async def add(self, items: List[StoredEmbedding]) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def get(
-        self,
-        ids: Optional[List[str]] = None,
-        filter: Optional[FilterType] = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
-        include: Include = ["metadatas"],
-    ) -> GetResult:
-        """Retrieve embeddings and their data/metadata by IDs or filter."""
+    async def get(self, ids: Optional[List[str]] = None) -> List[StoredEmbedding]:
         raise NotImplementedError
 
     @abstractmethod
-    def query(
-        self,
-        query_embeds: List[np.ndarray],
-        filter: Optional[FilterType] = None,
-        limit: int = 10,
-        include: Include = ["metadatas"],
-    ) -> QueryResult:
-        """Return nearest neighbors for given query embeddings with optional filters."""
+    async def query(self, query_embed: NDArray, topK: int, ids: Optional[List[str]] = None, include_sims: bool = False, threshold: Optional[float] = None) -> QueryResult:
         raise NotImplementedError
 
     @abstractmethod
-    def update(self, items: List[ItemEmbeddingUpdate[TData, TMetadata]]) -> None:
-        """Update embeddings, data, or metadata using ItemEmbedding objects."""
+    async def update(self, items: List[StoredEmbedding]) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def delete(self, ids: Optional[List[str]] = None, filter: Optional[FilterType] = None) -> None:
-        """Delete embeddings and associated data/metadata by IDs or filter."""
+    async def upsert(self, items: List[StoredEmbedding]) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def count(self, filter: Optional[FilterType] = None) -> int:
-        """Return the total number of embeddings, optionally filtered."""
+    async def delete(self, ids: List[str]) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def count(self) -> int:
         raise NotImplementedError

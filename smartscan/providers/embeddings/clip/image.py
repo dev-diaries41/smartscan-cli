@@ -6,32 +6,36 @@ from smartscan.errors import SmartScanError, ErrorCode
 
 
 class ClipImageEmbedder(ImageEmbeddingProvider):
+    embedding_dim = 512
+
     def __init__(self, model_path: str):
         self._model = OnnxModel(model_path)
-        self._embedding_dim = 512
 
-    @property
-    def embedding_dim(self) -> int:
-        return self._embedding_dim
+    def embed(self, data: Image.Image | list[Image.Image]) -> np.ndarray:
+        """
+        Generate normalized embeddings for one or more images.
 
-    def embed(self, data: Image.Image)-> np.ndarray:
-        if not self.is_initialized(): raise SmartScanError("Model not loaded", code=ErrorCode.MODEL_NOT_LOADED, details="Call init method first")
+        Args:
+            data: A single PIL image or a list of PIL images.
+
+        Returns:
+            A NumPy array of shape (N, D), where N is the number of input images
+            and D is the embedding dimension. A single input image returns an
+            array with shape (1, D).
+        """
+        if not self.is_initialized():
+            raise SmartScanError("Model not loaded", code=ErrorCode.MODEL_NOT_LOADED, details="Call init method first")
+
         input_name = self._model.get_inputs()[0].name
-        image_input = self._preprocess(data)
-        outputs = self._model.run({input_name: image_input})
-        embedding = outputs[0][0]
-        embedding = embedding / np.linalg.norm(embedding)
-        return embedding
-    
 
-    def embed_batch(self, data: list[Image.Image])-> np.ndarray:
-        if not self.is_initialized(): raise SmartScanError("Model not loaded", code=ErrorCode.MODEL_NOT_LOADED, details="Call init method first")        
-        input_name = self._model.get_inputs()[0].name
-        images = [self._preprocess(item) for item in data]
-        image_inputs = np.concatenate(images, axis=0)
+        images = [data] if isinstance(data, Image.Image) else data
+        image_inputs = np.concatenate(
+            [self._preprocess(image) for image in images],
+            axis=0,
+        )
         outputs = self._model.run({input_name: image_inputs})
         embeddings = outputs[0]
-        embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
+        embeddings /= np.linalg.norm(embeddings, axis=1, keepdims=True)
         return embeddings
     
     def close_session(self):

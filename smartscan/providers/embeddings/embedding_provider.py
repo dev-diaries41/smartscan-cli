@@ -6,19 +6,12 @@ import numpy as np
 T = TypeVar("T")
 
 class EmbeddingProvider(ABC, Generic[T]):
-    @property
-    @abstractmethod
-    def embedding_dim(self) -> int:
-        raise NotImplementedError
-    
-    @abstractmethod
-    def embed(self, data: T) -> np.ndarray:
-        raise NotImplementedError
-    
-    @abstractmethod
-    def embed_batch(self, data: list[T]) -> np.ndarray:
-        raise NotImplementedError
+    embedding_dim: int
 
+    @abstractmethod
+    def embed(self, data: T |  list[T]) -> np.ndarray:
+        raise NotImplementedError
+    
     @abstractmethod
     def init(self):
         raise NotImplementedError
@@ -33,11 +26,7 @@ class EmbeddingProvider(ABC, Generic[T]):
 
 
 class TextEmbeddingProviderBase(EmbeddingProvider[str], ABC):
-    @property
-    @abstractmethod
-    def max_tokenizer_length(self) -> int:
-        raise NotImplementedError
-
-
+    max_tokens: int
+ 
 ImageEmbeddingProvider = EmbeddingProvider[Image.Image]
 TextEmbeddingProvider = TextEmbeddingProviderBase

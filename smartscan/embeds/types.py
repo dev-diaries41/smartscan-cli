@@ -1,50 +1,25 @@
-from numpy import ndarray
-from typing import Literal, Generic, TypeVar, Optional, Any, Dict, Union, Callable, List
+from numpy.typing import NDArray
+from typing import Literal, Optional, List
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 
 
-TData = TypeVar("TData", bound=Any)
-TMetadata = TypeVar("TMetadata", bound=Dict)
-
-FilterType = Union[Dict[str, Any], Callable[[Any], bool]] 
-
 __all__ = [
-    "ItemEmbedding",
-    "ItemEmbeddingUpdate",
-    "GetResult",
+    "StoredEmbedding",
     "QueryResult",
-    "EncoderType",
-    "Include",
-    "FilterType",
+    "EncoderType"
 ]
 
 @dataclass
-class ItemEmbedding(Generic[TData, TMetadata]):
+class StoredEmbedding():
     item_id: str
-    embedding: ndarray
-    data: Optional[TData] = None
-    metadata: Optional[TMetadata] = None
-
-@dataclass
-class ItemEmbeddingUpdate(Generic[TData, TMetadata]):
-    item_id: str
-    embedding: Optional[ndarray] = None
-    data: Optional[TData] = None
-    metadata: Optional[TMetadata] = None
+    embedding: NDArray
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 @dataclass(frozen=True)
-class GetResult(Generic[TData, TMetadata]):
+class QueryResult():
     ids: List[str] = field(default_factory=list)
-    embeddings: List[ndarray] = field(default_factory=list)
-    metadatas: List[Optional[TMetadata]] = field(default_factory=list)
-    datas: List[Optional[TData]] = field(default_factory=list)
+    sims: Optional[List[float]] = None
 
-@dataclass(frozen=True)
-class QueryResult(GetResult[TData, TMetadata]):
-    sims: List[float] = field(default_factory=list)
-
+    
 EncoderType = Literal["image_encoder", "text_encoder", "face_encoder"]
-
-Include = List[
-    Literal["documents", "embeddings", "metadatas", "sims", "data"]
-]
