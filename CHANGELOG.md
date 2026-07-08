@@ -1,3 +1,18 @@
+## v1.1.0 - 08/07/2026
+
+### Changed
+
+* Made `EmbeddingStore` async
+* Replace all usage of `ItemEmbedding` with `StoredEmbedding` (breaking)
+* Updated `cluster` method on `IncrementalClusterer` to accept dict[ItemId, NDArray] (breaking)
+* Remove `label` from Cluster dataclass (use from metadata) and make `ClusterMetadata` dataclass ✅
+* Removed sim factor from `FewShotClassifier` (breaking)
+* Made `embedding_dim` a class attribute
+* Renamed `max_tokenizer_length` to `max_tokens` and made it a class attribute (breaking)
+* Removed `embed_batch` from embedding providers and update `embed` to handle list. It now returns embeddings in format [b,dim] (breaking)
+
+___
+
 ## v1.0.2 - 12/04/2026
 
 ### Fixed
@@ -10,6 +25,7 @@
 ### Changed
 * Assigned default values for max token length on relevant text embedder
 
+___
 
 ## v1.0.1 - 08/03/2026
 
@@ -20,6 +36,8 @@
 ### Changed
 
 * Adjusted how dynamic threshold is calculated (less restrictive)
+
+___
 
 ## v1.0.0 - 06/03/2026
 
