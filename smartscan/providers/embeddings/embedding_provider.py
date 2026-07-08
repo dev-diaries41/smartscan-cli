@@ -9,13 +9,9 @@ class EmbeddingProvider(ABC, Generic[T]):
     embedding_dim: int
 
     @abstractmethod
-    def embed(self, data: T) -> np.ndarray:
+    def embed(self, data: T |  list[T]) -> np.ndarray:
         raise NotImplementedError
     
-    @abstractmethod
-    def embed_batch(self, data: list[T]) -> np.ndarray:
-        raise NotImplementedError
-
     @abstractmethod
     def init(self):
         raise NotImplementedError
