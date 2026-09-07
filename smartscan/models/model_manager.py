@@ -92,9 +92,9 @@ class ModelManager:
 
         shutil.rmtree(extract_tmp)
 
-        expected = model_info.get("resource_files")
-        if expected:
-            for f in expected:
+        expected_resources = model_info.get("resource_files")
+        if expected_resources:
+            for f in expected_resources.values():
                 if not (target / f).exists():
                     raise SmartScanError(
                         f"Missing expected resource file: {f}",
@@ -131,11 +131,9 @@ class ModelManager:
             if not path.exists():
                 return False
 
-            expected = model_info.get("resource_files")
-            if not expected:
-                return True
-
-            return all((path / f).exists() for f in expected)
+            expected_resources = model_info.get("resource_files")
+            if expected_resources:
+                return all((path / f).exists() for f in expected_resources.values())
 
         return False
 
@@ -149,7 +147,7 @@ class ModelManager:
         return MODEL_REGISTRY[name]["url"]
 
     def get_text_embedder(self, model: LocalTextEmbeddingModel) -> TextEmbeddingProvider:
-        if model == "clip-vit-b-32-text":
+        if model == "clip_vit_b_32_text":
             if not self.model_exists(model):
                 print(f"{model} doesn't exsiting. Downloading model now...")
                 path = self.download_model(model)
@@ -157,12 +155,15 @@ class ModelManager:
                 path = self.get_model_path(model)
             
             model_info = MODEL_REGISTRY[model]
-            model_path = path / model_info['resource_files'][0]
-            vocab_path = path / model_info['resource_files'][1]
-            merges_path = path / model_info['resource_files'][2]            
+            resources = model_info['resource_files']
+            assert isinstance(resources, dict)
+
+            model_path = path / resources["model"]
+            vocab_path = path / resources["vocab"]
+            merges_path = path / resources["merges"]          
             return ClipTextEmbedder(model_path, str(vocab_path), str(merges_path))
         
-        elif model == "all-minilm-l6-v2":
+        elif model == "all_minilm_l6_v2":
             if not self.model_exists(model):
                 print(f"{model} doesn't exsiting. Downloading model now...")
                 path = self.download_model(model)
@@ -170,11 +171,14 @@ class ModelManager:
                 path = self.get_model_path(model)
 
             model_info = MODEL_REGISTRY[model]
-            model_path = path / model_info['resource_files'][0]
-            vocab_path = path / model_info['resource_files'][1]
+            resources = model_info['resource_files']
+            assert isinstance(resources, dict)
+
+            model_path = path / resources["model"]
+            vocab_path = path / resources["vocab"]
             return MiniLmTextEmbedder(model_path, str(vocab_path))
         
-        elif model == "all-distilroberta-v1":
+        elif model == "all_distilroberta_v1":
             if not self.model_exists(model):
                 print(f"{model} doesn't exsiting. Downloading model now...")
                 path = self.download_model(model)
@@ -182,16 +186,19 @@ class ModelManager:
                 path = self.get_model_path(model)
 
             model_info = MODEL_REGISTRY[model]
-            model_path = path / model_info['resource_files'][0]
-            vocab_path = path / model_info['resource_files'][1]
-            merges_path = path / model_info['resource_files'][2]
+            resources = model_info['resource_files']
+            assert isinstance(resources, dict)
+            
+            model_path = path / resources["model"]
+            vocab_path = path / resources["vocab"]
+            merges_path = path / resources["merges"]
             return DistillRobertATextEmbedder(model_path, str(vocab_path), str(merges_path))
         
         else:
             raise SmartScanError("Model not supported", code=ErrorCode.UNSUPPORTED_MODEL)
 
     def get_image_embedder(self, model: LocalImageEmbeddingModel) -> ImageEmbeddingProvider:
-        if model == "clip-vit-b-32-image":
+        if model == "clip_vit_b_32_image":
             if not self.model_exists(model):
                 print(f"{model} doesn't exsiting. Downloading model now...")
                 path = self.download_model(model)
@@ -199,7 +206,7 @@ class ModelManager:
 
             return ClipImageEmbedder(self.get_model_path(model))
 
-        elif model == "dinov2-small":
+        elif model == "dinov2_small":
             if not self.model_exists(model):
                 print(f"{model} doesn't exsiting. Downloading model now...")
                 path = self.download_model(model)
