@@ -1,21 +1,21 @@
 from typing import Dict
-from smartscan.models.types import ModelInfo, ModelName
+from smartscan.models.types import ModelInfo, ModelName, ResourceFiles
 
 MODEL_REGISTRY: Dict[ModelName, ModelInfo] = {
     'all_minilm_l6_v2': ModelInfo(
         url="https://github.com/dev-diaries41/smartscan-models/releases/download/1.0.1/minilm_sentence_transformer_quant.zip", 
         model_path='all_minilm_l6_v2',
-        resource_files= {"model":"minilm_sentence_transformer_quant.onnx", "vocab": "vocab.txt"}
+        resource_files= ResourceFiles(model="minilm_sentence_transformer_quant.onnx", vocab="vocab.txt")
         ),
     'all_distilroberta_v1': ModelInfo(
         url="https://github.com/dev-diaries41/smartscan-models/releases/download/1.0.1/all_distilroberta_v1_quant.zip", 
         model_path='all_distilroberta_v1',
-        resource_files= {"model":"sentence-transformers_all-distilroberta-v1_quant.onnx", "vocab":"vocab.json", ",merges":"merges.txt"}
+        resource_files= ResourceFiles(model="sentence-transformers_all-distilroberta-v1_quant.onnx", vocab="vocab.json", merges="merges.txt")
         ),
     'clip_vit_b_32_text': ModelInfo(
         url="https://github.com/dev-diaries41/smartscan-models/releases/download/1.0.1/clip_text_encoder_quant.zip", 
         model_path='clip_vit_b_32_text',
-        resource_files= {"model":"clip_text_encoder_quant.onnx", "vocab":"vocab.json", ",merges":"merges.txt"}
+        resource_files= ResourceFiles(model="clip_text_encoder_quant.onnx", vocab="vocab.json", merges="merges.txt")
         ),
     'clip_vit_b_32_image': ModelInfo(
         url="https://github.com/dev-diaries41/smartscan-models/releases/download/1.0.0/clip_image_encoder_quant.onnx", 
