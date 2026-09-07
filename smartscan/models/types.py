@@ -1,8 +1,8 @@
 from typing import Literal, TypeAlias, TypedDict, Optional, List
 
-LocalTextEmbeddingModel: TypeAlias = Literal["all-minilm-l6-v2", "clip-vit-b-32-text", "all-distilroberta-v1"]
-LocalImageEmbeddingModel: TypeAlias = Literal["clip-vit-b-32-image", "dinov2-small"]
-LocalFaceEmbeddingModel: TypeAlias = Literal["inception-resnet-v1"]
+LocalTextEmbeddingModel: TypeAlias = Literal["all_minilm_l6_v2", "clip_vit_b_32_text", "all_distilroberta_v1"]
+LocalImageEmbeddingModel: TypeAlias = Literal["clip_vit_b_32_image", "dinov2_small"]
+LocalFaceEmbeddingModel: TypeAlias = Literal["inception_resnet_v1"]
 
 ModelName = Literal[LocalTextEmbeddingModel,LocalImageEmbeddingModel, LocalFaceEmbeddingModel]
 

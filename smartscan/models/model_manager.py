@@ -149,7 +149,7 @@ class ModelManager:
         return MODEL_REGISTRY[name]["url"]
 
     def get_text_embedder(self, model: LocalTextEmbeddingModel) -> TextEmbeddingProvider:
-        if model == "clip-vit-b-32-text":
+        if model == "clip_vit_b_32_text":
             if not self.model_exists(model):
                 print(f"{model} doesn't exsiting. Downloading model now...")
                 path = self.download_model(model)
@@ -162,7 +162,7 @@ class ModelManager:
             merges_path = path / model_info['resource_files'][2]            
             return ClipTextEmbedder(model_path, str(vocab_path), str(merges_path))
         
-        elif model == "all-minilm-l6-v2":
+        elif model == "all_minilm_l6_v2":
             if not self.model_exists(model):
                 print(f"{model} doesn't exsiting. Downloading model now...")
                 path = self.download_model(model)
@@ -174,7 +174,7 @@ class ModelManager:
             vocab_path = path / model_info['resource_files'][1]
             return MiniLmTextEmbedder(model_path, str(vocab_path))
         
-        elif model == "all-distilroberta-v1":
+        elif model == "all_distilroberta_v1":
             if not self.model_exists(model):
                 print(f"{model} doesn't exsiting. Downloading model now...")
                 path = self.download_model(model)
@@ -191,7 +191,7 @@ class ModelManager:
             raise SmartScanError("Model not supported", code=ErrorCode.UNSUPPORTED_MODEL)
 
     def get_image_embedder(self, model: LocalImageEmbeddingModel) -> ImageEmbeddingProvider:
-        if model == "clip-vit-b-32-image":
+        if model == "clip_vit_b_32_image":
             if not self.model_exists(model):
                 print(f"{model} doesn't exsiting. Downloading model now...")
                 path = self.download_model(model)
@@ -199,7 +199,7 @@ class ModelManager:
 
             return ClipImageEmbedder(self.get_model_path(model))
 
-        elif model == "dinov2-small":
+        elif model == "dinov2_small":
             if not self.model_exists(model):
                 print(f"{model} doesn't exsiting. Downloading model now...")
                 path = self.download_model(model)
