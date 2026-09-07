@@ -92,9 +92,9 @@ class ModelManager:
 
         shutil.rmtree(extract_tmp)
 
-        expected = model_info.get("resource_files")
-        if expected:
-            for f in expected:
+        expected_resources = model_info.get("resource_files")
+        if expected_resources:
+            for f in expected_resources.values():
                 if not (target / f).exists():
                     raise SmartScanError(
                         f"Missing expected resource file: {f}",
@@ -131,11 +131,9 @@ class ModelManager:
             if not path.exists():
                 return False
 
-            expected = model_info.get("resource_files")
-            if not expected:
-                return True
-
-            return all((path / f).exists() for f in expected)
+            expected_resources = model_info.get("resource_files")
+            if expected_resources:
+                return all((path / f).exists() for f in expected_resources.values())
 
         return False
 
@@ -157,9 +155,12 @@ class ModelManager:
                 path = self.get_model_path(model)
             
             model_info = MODEL_REGISTRY[model]
-            model_path = path / model_info['resource_files'][0]
-            vocab_path = path / model_info['resource_files'][1]
-            merges_path = path / model_info['resource_files'][2]            
+            resources = model_info['resource_files']
+            assert isinstance(resources, dict)
+
+            model_path = path / resources["model"]
+            vocab_path = path / resources["vocab"]
+            merges_path = path / resources["merges"]          
             return ClipTextEmbedder(model_path, str(vocab_path), str(merges_path))
         
         elif model == "all_minilm_l6_v2":
@@ -170,8 +171,11 @@ class ModelManager:
                 path = self.get_model_path(model)
 
             model_info = MODEL_REGISTRY[model]
-            model_path = path / model_info['resource_files'][0]
-            vocab_path = path / model_info['resource_files'][1]
+            resources = model_info['resource_files']
+            assert isinstance(resources, dict)
+
+            model_path = path / resources["model"]
+            vocab_path = path / resources["vocab"]
             return MiniLmTextEmbedder(model_path, str(vocab_path))
         
         elif model == "all_distilroberta_v1":
@@ -182,9 +186,12 @@ class ModelManager:
                 path = self.get_model_path(model)
 
             model_info = MODEL_REGISTRY[model]
-            model_path = path / model_info['resource_files'][0]
-            vocab_path = path / model_info['resource_files'][1]
-            merges_path = path / model_info['resource_files'][2]
+            resources = model_info['resource_files']
+            assert isinstance(resources, dict)
+            
+            model_path = path / resources["model"]
+            vocab_path = path / resources["vocab"]
+            merges_path = path / resources["merges"]
             return DistillRobertATextEmbedder(model_path, str(vocab_path), str(merges_path))
         
         else:

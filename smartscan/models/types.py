@@ -6,8 +6,11 @@ LocalFaceEmbeddingModel: TypeAlias = Literal["inception_resnet_v1"]
 
 ModelName = Literal[LocalTextEmbeddingModel,LocalImageEmbeddingModel, LocalFaceEmbeddingModel]
 
+TextModelResourceType: TypeAlias = Literal["merges", "vocab"]
+ModelResourceType: TypeAlias = Literal["model", TextModelResourceType]
+
 class ModelInfo(TypedDict):
     url: str
     model_path: str             
-    resource_files: Optional[List[str]]
+    resource_files: Optional[dict[ModelResourceType, str]]
     file_hash: Optional[str] = None
