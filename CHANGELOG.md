@@ -1,7 +1,16 @@
+## v1.1.1 - 07/09/2026
+
+### Removed
+* Removed index package
+
+### Changed
+* Improved robustness and type safety of resource file usage in `ModelManager` and `ModelInfo` by using `TypedDict` for resource files instead of `List`
+
+___
+
 ## v1.1.0 - 08/07/2026
 
 ### Changed
-
 * Made `EmbeddingStore` async
 * Replace all usage of `ItemEmbedding` with `StoredEmbedding` (breaking)
 * Updated `cluster` method on `IncrementalClusterer` to accept dict[ItemId, NDArray] (breaking)
@@ -34,7 +43,6 @@ ___
 * Removed merge-threshold param (breaking) for `Incremental Clusterer` and replaced with dynamic merge-threshold based on stats across clusters (breaking)
 
 ### Changed
-
 * Adjusted how dynamic threshold is calculated (less restrictive)
 
 ___
