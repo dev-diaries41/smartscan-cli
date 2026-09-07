@@ -13,4 +13,4 @@ class ModelInfo(TypedDict):
     url: str
     model_path: str             
     resource_files: Optional[dict[ModelResourceType, str]]
-    file_hash: Optional[str] = None
+    file_hash: Optional[str]
